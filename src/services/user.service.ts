@@ -30,6 +30,15 @@ class UserService {
   }
 
   /**
+   * Get a user by email
+   * @param email - The email of the user to retrieve
+   * @returns The user document or null if not found
+   */
+  async getUserByEmail(email: string): Promise<IUser | null> {
+    return User.findOne({ email }).exec();
+  }
+
+  /**
    * Update a user by ID
    * @param userId - The ID of the user to update
    * @param updateData - Data to update the user with

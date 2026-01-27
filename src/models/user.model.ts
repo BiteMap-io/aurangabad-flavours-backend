@@ -16,17 +16,8 @@ enum UserType {
   CUSTOMER = 'customer',
 }
 
-export interface IUser extends Document {
-  id: string;
-  name: string;
-  email: string;
+import bcrypt from 'bcrypt';
 
-  password: string;
-  userType: UserType;
-
-  createdAt: Date;
-  updatedAt: Date;
-}
 const UserSchema = new mongoose.Schema<IUser>(
   {
     name: { type: String, required: true },
@@ -42,5 +33,29 @@ const UserSchema = new mongoose.Schema<IUser>(
   },
   { timestamps: true }
 );
+
+UserSchema.pre('save', async function (next) {
+  if (!this.isModified('password')) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
+
+export interface IUser extends Document {
+  id: string;
+  name: string;
+  email: string;
+
+  password: string;
+  userType: UserType;
+  comparePassword(password: string): Promise<boolean>;
+
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+UserSchema.methods.comparePassword = async function (password: string): Promise<boolean> {
+  return bcrypt.compare(password, this.password);
+};
 
 export default mongoose.model<IUser>('User', UserSchema);
