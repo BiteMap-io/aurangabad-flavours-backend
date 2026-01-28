@@ -10,7 +10,7 @@ app.use(helmet());
 app.use(express.json());
 app.use(morgan('dev'));
 
-app.use('/v1', routes);
+app.use('/', routes);
 
 app.get('/health', (_req, res) => res.json({ ok: true }));
 
