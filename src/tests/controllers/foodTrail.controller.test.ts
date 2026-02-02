@@ -26,8 +26,10 @@ describe('FoodTrail Controller Integration', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Trail 1',
+        description: 'A wonderful food trail description.',
         icon: 'icon',
         color: 'blue',
+        estimatedTime: '2 hours',
       });
 
     expect(res.status).toBe(201);

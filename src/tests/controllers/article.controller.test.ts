@@ -44,10 +44,12 @@ describe('Article Controller Integration', () => {
         .send({
           title: 'New Article',
           slug: 'new-article',
+          excerpt: 'Short excerpt',
           content: 'Content...',
           image: 'img.jpg',
+          author: new mongoose.Types.ObjectId(),
           publishedDate: new Date(),
-          readTime: 5,
+          readTime: '5 mins',
           featured: false,
         });
 

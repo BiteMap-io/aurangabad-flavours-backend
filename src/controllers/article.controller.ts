@@ -23,6 +23,7 @@ class ArticleController {
       const article = await this.articleService.createArticle(req.body);
       res.status(201).json(article);
     } catch (error) {
+      console.error('Error creating article:', error);
       res.status(500).json({ error: 'Failed to create article' });
     }
   };

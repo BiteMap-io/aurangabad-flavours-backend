@@ -11,7 +11,16 @@ Quick start
 npm install
 ```
 
-3. Run in development:
+3. Run databases locally using Docker:
+
+```bash
+docker-compose -f docker-compose.dev.yml up -d
+```
+
+- MongoDB is available at `localhost:27017`
+- Mongo Express (UI) is available at `http://localhost:8081`
+
+4. Run in development:
 
 ```bash
 npm run dev

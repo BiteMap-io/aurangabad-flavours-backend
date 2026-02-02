@@ -45,6 +45,7 @@ describe('Dish Controller Integration', () => {
           name: 'Biryani',
           image: 'biryani.jpg',
           category: 'Main Course',
+          restaurantId: new mongoose.Types.ObjectId().toString(),
         });
 
       expect(res.status).toBe(201);

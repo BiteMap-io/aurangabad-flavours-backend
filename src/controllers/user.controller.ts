@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import UserService from '../services/user.service';
+import jwt from 'jsonwebtoken';
+import config from '../config';
 
 class UserController {
   private userService: UserService;
@@ -13,31 +15,28 @@ class UserController {
    * @param req - Express request object
    * @param res - Express response object
    */
-  async signup(req: Request, res: Response): Promise<void> {
+  signup = async (req: Request, res: Response): Promise<void> => {
     try {
       const user = await this.userService.createUser(req.body);
-      // Generate token (omitted for brevity, usually done here or in a helper)
-      // For now returning user. ideally return token.
-      // Let's generate a token here for completeness
-      const jwt = require('jsonwebtoken'); // Lazy load to avoid top level dependency if not strictly needed there
       const token = jwt.sign(
-        { id: user.id, email: user.email, userType: user.userType },
+        { id: user._id, email: user.email, userType: user.userType },
         process.env.JWT_SECRET || 'default_secret',
         { expiresIn: '1d' }
       );
 
       res.status(201).json({ user, token });
     } catch (error) {
+      console.error('Signup error:', error);
       res.status(500).json({ error: 'Failed to create user' });
     }
-  }
+  };
 
   /**
    * Handle user login
    * @param req - Express request object
    * @param res - Express response object
    */
-  async login(req: Request, res: Response): Promise<void> {
+  login = async (req: Request, res: Response): Promise<void> => {
     try {
       const { email, password } = req.body;
       const user = await this.userService.getUserByEmail(email);
@@ -53,18 +52,18 @@ class UserController {
         return;
       }
 
-      const jwt = require('jsonwebtoken');
       const token = jwt.sign(
-        { id: user.id, email: user.email, userType: user.userType },
+        { id: user._id, email: user.email, userType: user.userType },
         process.env.JWT_SECRET || 'default_secret',
         { expiresIn: '1d' }
       );
 
       res.status(200).json({ user, token });
     } catch (error) {
+      console.error('Login error:', error);
       res.status(500).json({ error: 'Login failed' });
     }
-  }
+  };
 
   /**
    * Handle creating a new user (admin only maybe? or same as signup)

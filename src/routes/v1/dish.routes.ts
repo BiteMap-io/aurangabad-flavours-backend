@@ -5,19 +5,130 @@ import { authorize } from '../../middleware/authorize.middleware';
 
 const router = Router();
 
-// Retrieve all dishes - Authenticated users
+/**
+ * @swagger
+ * tags:
+ *   name: Dishes
+ *   description: Dish management
+ */
+
+/**
+ * @swagger
+ * /v1/dishes:
+ *   get:
+ *     summary: Get all dishes
+ *     tags: [Dishes]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of dishes
+ */
 router.get('/', authenticate, dishController.getAllDishes);
 
-// Retrieve a single dish - Authenticated users
+/**
+ * @swagger
+ * /v1/dishes/{id}:
+ *   get:
+ *     summary: Get dish by ID
+ *     tags: [Dishes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Dish details
+ *       404:
+ *         description: Dish not found
+ */
 router.get('/:id', authenticate, dishController.getDishById);
 
-// Create a new dish - Admin only
+/**
+ * @swagger
+ * /v1/dishes:
+ *   post:
+ *     summary: Create a new dish
+ *     tags: [Dishes]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, image, category, restaurantId]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *               restaurantId:
+ *                 type: string
+ *                 description: Restaurant ID
+ *     responses:
+ *       201:
+ *         description: Dish created
+ */
 router.post('/', authenticate, authorize(['admin']), dishController.createDish);
 
-// Update a dish - Admin only
+/**
+ * @swagger
+ * /v1/dishes/{id}:
+ *   put:
+ *     summary: Update a dish
+ *     tags: [Dishes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               image:
+ *                 type: string
+ *               category:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Dish updated
+ */
 router.put('/:id', authenticate, authorize(['admin']), dishController.updateDish);
 
-// Delete a dish - Admin only
+/**
+ * @swagger
+ * /v1/dishes/{id}:
+ *   delete:
+ *     summary: Delete a dish
+ *     tags: [Dishes]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Dish deleted
+ */
 router.delete('/:id', authenticate, authorize(['admin']), dishController.deleteDish);
 
 export default router;

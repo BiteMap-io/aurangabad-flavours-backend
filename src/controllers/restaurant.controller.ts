@@ -1,5 +1,7 @@
 import { Request, Response } from 'express';
 import RestaurantService from '../services/restaurant.service';
+import s3Service from '../services/s3.service';
+import config from '../config';
 
 /**
  * @author Denizuh
@@ -20,9 +22,18 @@ class RestaurantController {
    */
   createRestaurant = async (req: Request, res: Response): Promise<void> => {
     try {
+      if (req.file) {
+        const key = `restaurants/${Date.now()}-${req.file.originalname}`;
+        const { bucket } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
+        // Construct S3 URL
+        const url = `https://${bucket}.s3.${config.aws.region}.amazonaws.com/${key}`;
+        req.body.image = url;
+      }
+
       const restaurant = await this.restaurantService.createRestaurant(req.body);
       res.status(201).json(restaurant);
     } catch (error) {
+      console.error('Error creating restaurant:', error);
       res.status(500).json({ error: 'Failed to create restaurant' });
     }
   };
@@ -66,16 +77,22 @@ class RestaurantController {
    */
   updateRestaurant = async (req: Request, res: Response): Promise<void> => {
     try {
-      const restaurant = await this.restaurantService.updateRestaurant(
-        req.params.id,
-        req.body
-      );
+      if (req.file) {
+        const key = `restaurants/${Date.now()}-${req.file.originalname}`;
+        const { bucket } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
+        // Construct S3 URL
+        const url = `https://${bucket}.s3.${config.aws.region}.amazonaws.com/${key}`;
+        req.body.image = url;
+      }
+
+      const restaurant = await this.restaurantService.updateRestaurant(req.params.id, req.body);
       if (restaurant) {
         res.status(200).json(restaurant);
       } else {
         res.status(404).json({ error: 'Restaurant not found' });
       }
     } catch (error) {
+      console.error('Error updating restaurant:', error);
       res.status(500).json({ error: 'Failed to update restaurant' });
     }
   };

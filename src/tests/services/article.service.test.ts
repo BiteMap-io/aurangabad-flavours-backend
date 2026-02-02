@@ -35,6 +35,7 @@ describe('ArticleService', () => {
     it('should return all articles', async () => {
       const mockArticles = [{ title: 'Article 1' }, { title: 'Article 2' }];
       (Article.find as jest.Mock).mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue(mockArticles),
       });
 
@@ -49,6 +50,7 @@ describe('ArticleService', () => {
     it('should return an article by id', async () => {
       const mockArticle = { _id: '123', title: 'Article 1' };
       (Article.findById as jest.Mock).mockReturnValue({
+        populate: jest.fn().mockReturnThis(),
         exec: jest.fn().mockResolvedValue(mockArticle),
       });
 
