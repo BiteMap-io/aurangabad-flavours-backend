@@ -54,10 +54,11 @@ describe('Dish Controller Integration', () => {
   });
 
   describe('GET /v1/dishes', () => {
-    it('should list dishes', async () => {
-      const res = await request(app).get('/v1/dishes').set('Authorization', `Bearer ${userToken}`);
+    it('should allow public access to list dishes', async () => {
+      const res = await request(app).get('/v1/dishes');
 
       expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
     });
   });
 });

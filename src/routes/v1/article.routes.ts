@@ -16,24 +16,20 @@ const router = Router();
  * @swagger
  * /v1/articles:
  *   get:
- *     summary: Get all articles
+ *     summary: Get all articles (Public)
  *     tags: [Articles]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of articles
  */
-router.get('/', authenticate, articleController.getAllArticles);
+router.get('/', articleController.getAllArticles);
 
 /**
  * @swagger
  * /v1/articles/{id}:
  *   get:
- *     summary: Get article by ID
+ *     summary: Get article by ID (Public)
  *     tags: [Articles]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -46,7 +42,7 @@ router.get('/', authenticate, articleController.getAllArticles);
  *       404:
  *         description: Article not found
  */
-router.get('/:id', authenticate, articleController.getArticleById);
+router.get('/:id', articleController.getArticleById);
 
 /**
  * @swagger

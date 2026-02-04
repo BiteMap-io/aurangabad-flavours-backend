@@ -18,24 +18,20 @@ const upload = multer({ storage: multer.memoryStorage() });
  * @swagger
  * /v1/restaurants:
  *   get:
- *     summary: Get all restaurants
+ *     summary: Get all restaurants (Public)
  *     tags: [Restaurants]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of restaurants
  */
-router.get('/', authenticate, restaurantController.getAllRestaurants);
+router.get('/', restaurantController.getAllRestaurants);
 
 /**
  * @swagger
  * /v1/restaurants/{id}:
  *   get:
- *     summary: Get restaurant by ID
+ *     summary: Get restaurant by ID (Public)
  *     tags: [Restaurants]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -48,7 +44,7 @@ router.get('/', authenticate, restaurantController.getAllRestaurants);
  *       404:
  *         description: Restaurant not found
  */
-router.get('/:id', authenticate, restaurantController.getRestaurantById);
+router.get('/:id', restaurantController.getRestaurantById);
 
 /**
  * @swagger

@@ -16,24 +16,20 @@ const router = Router();
  * @swagger
  * /v1/dishes:
  *   get:
- *     summary: Get all dishes
+ *     summary: Get all dishes (Public)
  *     tags: [Dishes]
- *     security:
- *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: List of dishes
  */
-router.get('/', authenticate, dishController.getAllDishes);
+router.get('/', dishController.getAllDishes);
 
 /**
  * @swagger
  * /v1/dishes/{id}:
  *   get:
- *     summary: Get dish by ID
+ *     summary: Get dish by ID (Public)
  *     tags: [Dishes]
- *     security:
- *       - bearerAuth: []
  *     parameters:
  *       - in: path
  *         name: id
@@ -46,7 +42,7 @@ router.get('/', authenticate, dishController.getAllDishes);
  *       404:
  *         description: Dish not found
  */
-router.get('/:id', authenticate, dishController.getDishById);
+router.get('/:id', dishController.getDishById);
 
 /**
  * @swagger

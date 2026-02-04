@@ -70,10 +70,8 @@ describe('Article Controller Integration', () => {
   });
 
   describe('GET /v1/articles', () => {
-    it('should allow authenticated user to list articles', async () => {
-      const res = await request(app)
-        .get('/v1/articles')
-        .set('Authorization', `Bearer ${userToken}`);
+    it('should allow public (unauthenticated) access to list articles', async () => {
+      const res = await request(app).get('/v1/articles');
 
       expect(res.status).toBe(200);
       expect(Array.isArray(res.body)).toBe(true);

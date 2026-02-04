@@ -44,4 +44,13 @@ describe('Restaurant Controller Integration', () => {
 
     expect(res.status).toBe(201);
   });
+
+  describe('GET /v1/restaurants', () => {
+    it('should allow public access to list restaurants', async () => {
+      const res = await request(app).get('/v1/restaurants');
+
+      expect(res.status).toBe(200);
+      expect(Array.isArray(res.body)).toBe(true);
+    });
+  });
 });
