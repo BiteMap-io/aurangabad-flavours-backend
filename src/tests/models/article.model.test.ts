@@ -10,6 +10,7 @@ describe('Article Model Test', () => {
       content: 'Content about food...',
       image: 'food.jpg',
       author: new mongoose.Types.ObjectId(),
+      category: 'Guides',
       publishedDate: new Date(),
       readTime: 5,
       featured: true,

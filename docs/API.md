@@ -8,7 +8,7 @@ Welcome to the API documentation for the Aurangabad Flavours Backend. This API p
 
 ## Authentication
 
-The API uses JWT (JSON Web Token) for authentication. Most administrative tasks (POST, PUT, DELETE) require a Bearer token.
+The API uses JWT (JSON Web Token) for authentication. Most administrative tasks (POST, PUT, DELETE, PATCH) require a Bearer token.
 
 ### How to Authenticate
 
@@ -64,36 +64,58 @@ Authenticates a user and returns a JWT token.
 }
 ```
 
+---
+
+## Admin Dashboard (Admin Only)
+
+### Get Dashboard Stats
+
+`GET /admin/stats`
+
 **Response (200):**
 
 ```json
 {
-  "token": "eyJhbG...",
-  "user": {
-    "id": "...",
-    "name": "John Doe",
-    "email": "john@example.com",
-    "userType": "customer"
-  }
+  "totalHotels": 45,
+  "activeEvents": 12,
+  "publishedArticles": 28,
+  "monthlyViews": 1540
 }
 ```
 
+### Get Recent Activity
+
+`GET /admin/recent-activity`
+
+**Response (200):** List of recent administrative actions.
+
 ---
 
-## User Endpoints
+## Settings Endpoints
 
-### Create User (Admin Only)
+### Get Site Settings (Public)
 
-`POST /users`
+`GET /settings`
 
-**Request Body:** Same as Signup.
-**Response (201):** User created.
+Returns site-wide configuration like social media links and feature flags.
 
-### Get User by ID
+### Update Site Settings (Admin)
 
-`GET /users/:id`
+`PUT /settings`
 
-Returns details of a specific user. Requires authentication.
+---
+
+## Media Endpoints (Admin Only)
+
+### Get All Media
+
+`GET /media`
+
+### Upload Media
+
+`POST /media`
+
+Uses `multipart/form-data`. Field name: `file`.
 
 ---
 
@@ -103,70 +125,31 @@ Returns details of a specific user. Requires authentication.
 
 `GET /restaurants`
 
-**Response (200):** Array of restaurants.
-
 ### Get Restaurant by ID (Public)
 
 `GET /restaurants/:id`
 
-**Response (200):** Detailed restaurant object.
+### Create/Update Restaurant (Admin Only)
 
-### Create Restaurant (Admin Only)
-
-`POST /restaurants`
+`POST /restaurants` | `PUT /restaurants/:id`
 
 Uses `multipart/form-data` for image uploads.
 
 **Fields:**
 
 - `name`: string (required)
-- `estabilishmentType`: string (required)
+- `establishmentType`: string (required)
+- `cuisine`: string (required)
+- `facilities`: array of strings
 - `priceRange`: string (required)
 - `description`: string (required)
 - `area`: string (required)
 - `image`: file (required)
 - `location[coordinates]`: array of numbers (longitude, latitude)
 
-### Update Restaurant (Admin Only)
+### Toggle Featured Status (Admin)
 
-`PUT /restaurants/:id`
-
-**Fields:** Same as POST (all optional).
-
-### Delete Restaurant (Admin Only)
-
-`DELETE /restaurants/:id`
-
----
-
-## Dish Endpoints
-
-### Get All Dishes (Public)
-
-`GET /dishes`
-
-### Get Dish by ID (Public)
-
-`GET /dishes/:id`
-
-### Create Dish (Admin Only)
-
-`POST /dishes`
-
-**Request Body:**
-
-```json
-{
-  "name": "Naan Khalia",
-  "image": "url_to_image",
-  "category": "Main Course",
-  "restaurantId": "restaurant_id_here"
-}
-```
-
-### Update/Delete Dish (Admin Only)
-
-`PUT /dishes/:id` | `DELETE /dishes/:id`
+`PATCH /restaurants/:id/toggle-featured`
 
 ---
 
@@ -180,74 +163,47 @@ Uses `multipart/form-data` for image uploads.
 
 `POST /articles`
 
-**Request Body:**
+**Fields:**
 
-```json
-{
-  "title": "Top 10 Street Foods",
-  "slug": "top-10-street-foods",
-  "content": "Full article content...",
-  "author": "user_id_here",
-  "excerpt": "Brief summary",
-  "image": "url_to_image",
-  "publishedDate": "2026-02-14T10:00:00Z",
-  "readTime": "5 mins",
-  "featured": true
-}
-```
+- `title`, `slug`, `content`, `author`, `excerpt`, `image`, `publishedDate`, `readTime`
+- `category`: string (required)
+- `tags`: array of strings
+- `status`: `draft` | `published`
+- `featured`: boolean
+
+### Toggle Publication Status (Admin)
+
+`PATCH /articles/:id/toggle-status`
 
 ---
 
 ## Event Endpoints
 
-### Get All Events
+### Get All Events (Public)
 
-`GET /events` (Requires Auth)
+`GET /events`
 
-### Create Event (Admin Only)
+### Create/Update Event (Admin Only)
 
-`POST /events`
+`POST /events` | `PUT /events/:id`
 
-**Request Body:**
+**Fields:**
 
-```json
-{
-  "name": "Food Festival",
-  "description": "Annual food fest",
-  "date": "2026-03-01T18:00:00Z",
-  "location": "Aurangabad Stadium",
-  "image": "url",
-  "organizer": "Aurangabad Flavours",
-  "price": "500",
-  "capacity": 200
-}
-```
+- `name`, `description`, `date`, `location`, `image`, `organizer`, `price`, `capacity`
+- `status`: `upcoming` | `recurring` | `past`
+- `featured`: boolean
 
 ---
 
 ## Food Trail Endpoints
 
-### Get All Food Trails
+### Get All Food Trails (Public)
 
-`GET /food-trails` (Requires Auth)
+`GET /food-trails`
 
 ### Create Food Trail (Admin Only)
 
 `POST /food-trails`
-
-**Request Body:**
-
-```json
-{
-  "name": "Old City Spice Trail",
-  "description": "Explore the spices of the old city",
-  "icon": "map-marker",
-  "color": "#FF5733",
-  "estimatedTime": "3 hours",
-  "restaurantsId": ["id1", "id2"],
-  "highlights": ["Tara Pan Center", "Gayatri Chaat"]
-}
-```
 
 ---
 

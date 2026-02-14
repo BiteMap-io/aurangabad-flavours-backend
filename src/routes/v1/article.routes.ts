@@ -144,4 +144,29 @@ router.put('/:id', authenticate, authorize(['admin']), articleController.updateA
  */
 router.delete('/:id', authenticate, authorize(['admin']), articleController.deleteArticle);
 
+/**
+ * @swagger
+ * /v1/articles/{id}/toggle-status:
+ *   patch:
+ *     summary: Toggle article status (Admin)
+ *     tags: [Articles]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Status toggled
+ */
+router.patch(
+  '/:id/toggle-status',
+  authenticate,
+  authorize(['admin']),
+  articleController.toggleStatus
+);
+
 export default router;

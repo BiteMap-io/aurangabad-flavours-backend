@@ -24,7 +24,7 @@ const router = Router();
  *       200:
  *         description: List of food trails
  */
-router.get('/', authenticate, foodTrailController.getAllFoodTrails);
+router.get('/', foodTrailController.getAllFoodTrails);
 
 /**
  * @swagger
@@ -46,7 +46,7 @@ router.get('/', authenticate, foodTrailController.getAllFoodTrails);
  *       404:
  *         description: Food trail not found
  */
-router.get('/:id', authenticate, foodTrailController.getFoodTrailById);
+router.get('/:id', foodTrailController.getFoodTrailById);
 
 /**
  * @swagger

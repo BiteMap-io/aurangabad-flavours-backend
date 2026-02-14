@@ -95,6 +95,27 @@ class ArticleController {
       res.status(500).json({ error: 'Failed to delete article' });
     }
   };
+
+  /**
+   * Handle toggling article status
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  toggleStatus = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const article = await this.articleService.getArticleById(req.params.id);
+      if (!article) {
+        res.status(404).json({ error: 'Article not found' });
+        return;
+      }
+
+      article.status = article.status === 'published' ? 'draft' : 'published';
+      await article.save();
+      res.status(200).json(article);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to toggle article status' });
+    }
+  };
 }
 
 export default new ArticleController();

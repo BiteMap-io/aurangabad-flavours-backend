@@ -13,7 +13,9 @@ import { IDish } from './dish.model';
 export interface IRestaurant extends Document {
   id: string;
   name: string;
-  estabilishmentType: string;
+  establishmentType: string;
+  cuisine: string;
+  facilities: string[];
   priceRange: string;
   rating: number;
   image: string;
@@ -37,7 +39,9 @@ export interface IRestaurant extends Document {
 const RestaurantSchema = new mongoose.Schema<IRestaurant>(
   {
     name: { type: String, required: true },
-    estabilishmentType: { type: String, required: true },
+    establishmentType: { type: String, required: true },
+    cuisine: { type: String, required: true },
+    facilities: { type: [String], default: [] },
     priceRange: { type: String, required: true },
     rating: { type: Number, required: true, default: 0 },
     image: { type: String, required: true },

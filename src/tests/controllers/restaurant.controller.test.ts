@@ -26,7 +26,8 @@ describe('Restaurant Controller Integration', () => {
       .set('Authorization', `Bearer ${adminToken}`)
       .send({
         name: 'Rest 1',
-        estabilishmentType: 'Type 1',
+        establishmentType: 'Type 1',
+        cuisine: 'Indian',
         priceRange: '$$',
         rating: 5,
         image: 'img.jpg',
