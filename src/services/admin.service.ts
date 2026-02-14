@@ -18,11 +18,13 @@ class AdminService {
     const oneMonthAgo = new Date(now.getFullYear(), now.getMonth() - 1, now.getDate());
 
     restaurants.forEach((r) => {
-      r.views.forEach((v) => {
-        if (v.date >= oneMonthAgo) {
-          monthlyViews += v.count;
-        }
-      });
+      if (r.views && Array.isArray(r.views)) {
+        r.views.forEach((v) => {
+          if (v.date >= oneMonthAgo) {
+            monthlyViews += v.count;
+          }
+        });
+      }
     });
 
     return {

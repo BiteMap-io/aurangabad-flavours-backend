@@ -12,7 +12,16 @@ import { localhostOnly } from './middleware/localhostOnly.middleware';
 const app = express();
 
 app.use(helmet());
-app.use(cors());
+app.use(cors({ origin: '*', methods: '*', allowedHeaders: '*' }));
+
+app.use(
+  cors({
+    origin: true,
+    credentials: true,
+    allowedHeaders: ['Content-Type', 'Authorization'],
+  })
+);
+
 app.use(express.json());
 app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
 

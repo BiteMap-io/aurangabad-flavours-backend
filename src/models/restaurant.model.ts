@@ -52,7 +52,12 @@ const RestaurantSchema = new mongoose.Schema<IRestaurant>(
       coordinates: { type: [Number], required: true },
     },
     verified: { type: Boolean, default: false },
-
+    views: [
+      {
+        date: { type: Date, default: Date.now },
+        count: { type: Number, default: 0 },
+      },
+    ],
     ihmRecommended: { type: Boolean, default: false },
     area: { type: String, required: true },
     dishes: [{ type: mongoose.Schema.Types.ObjectId, ref: 'Dish' }],

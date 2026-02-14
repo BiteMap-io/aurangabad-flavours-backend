@@ -9,7 +9,12 @@
     "start": "node dist/index.js",
     "format": "prettier --write \"src/**/*.{ts,js,json,md}\"",
     "test": "jest",
-    "seed": "ts-node src/scripts/seed.ts"
+    "seed": "ts-node src/scripts/seed.ts",
+    "seed-data": "ts-node src/scripts/seed-data.ts",
+    "seed-articles": "ts-node src/scripts/seed-articles.ts",
+    "seed-events": "ts-node src/scripts/seed-events.ts",
+    "seed-food-trails": "ts-node src/scripts/seed-food-trails.ts",
+    "seed-all": "ts-node src/scripts/seed-all.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.379.0",
