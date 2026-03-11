@@ -143,4 +143,29 @@ router.put(
  */
 router.delete('/:id', authenticate, authorize(['admin']), restaurantController.deleteRestaurant);
 
+/**
+ * @swagger
+ * /v1/restaurants/{id}/toggle-featured:
+ *   patch:
+ *     summary: Toggle restaurant featured status (Admin)
+ *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Status toggled
+ */
+router.patch(
+  '/:id/toggle-featured',
+  authenticate,
+  authorize(['admin']),
+  restaurantController.toggleFeatured
+);
+
 export default router;

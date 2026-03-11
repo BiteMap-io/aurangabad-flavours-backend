@@ -12,19 +12,19 @@ async function seed() {
     console.log('Connected.');
 
     // 1. Seed Admin User
-    const adminEmail = 'admin@aurangabadflavours.com';
-    const existingAdmin = await User.findOne({ email: adminEmail });
+    const { email, password } = config.adminCredentials;
+    const existingAdmin = await User.findOne({ email });
 
     if (!existingAdmin) {
       console.log('Creating default admin user...');
       const admin = new User({
         name: 'Super Admin',
-        email: adminEmail,
-        password: 'adminPassword123!', // User should change this
+        email,
+        password,
         userType: 'admin',
       });
       await admin.save();
-      console.log('Admin user created successfully.');
+      console.log(`Admin user (${email}) created successfully.`);
     } else {
       console.log('Admin user already exists.');
     }

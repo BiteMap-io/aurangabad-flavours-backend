@@ -18,6 +18,9 @@ export interface IArticle extends Document {
   content: string;
   image: string;
   author: IUser;
+  category: string;
+  tags: string[];
+  status: 'draft' | 'published';
   publishedDate: Date;
   readTime: string;
   featured: boolean;
@@ -34,6 +37,9 @@ const ArticleSchema = new Schema<IArticle>(
     content: { type: String, required: true },
     image: { type: String, required: true },
     author: { type: Schema.Types.ObjectId, ref: 'User', required: true },
+    category: { type: String, required: true },
+    tags: { type: [String], default: [] },
+    status: { type: String, enum: ['draft', 'published'], default: 'draft' },
     publishedDate: { type: Date, required: true },
     readTime: { type: String, required: true },
     featured: { type: Boolean, default: false },

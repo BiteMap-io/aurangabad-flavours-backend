@@ -24,7 +24,7 @@ const router = Router();
  *       200:
  *         description: List of events
  */
-router.get('/', authenticate, eventController.getAllEvents);
+router.get('/', eventController.getAllEvents);
 
 /**
  * @swagger
@@ -46,7 +46,7 @@ router.get('/', authenticate, eventController.getAllEvents);
  *       404:
  *         description: Event not found
  */
-router.get('/:id', authenticate, eventController.getEventById);
+router.get('/:id', eventController.getEventById);
 
 /**
  * @swagger

@@ -114,6 +114,27 @@ class RestaurantController {
       res.status(500).json({ error: 'Failed to delete restaurant' });
     }
   };
+
+  /**
+   * Handle toggling featured status (ihmRecommended)
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  toggleFeatured = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const restaurant = await this.restaurantService.getRestaurantById(req.params.id);
+      if (!restaurant) {
+        res.status(404).json({ error: 'Restaurant not found' });
+        return;
+      }
+
+      restaurant.ihmRecommended = !restaurant.ihmRecommended;
+      await restaurant.save();
+      res.status(200).json(restaurant);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to toggle featured status' });
+    }
+  };
 }
 
 export default new RestaurantController();

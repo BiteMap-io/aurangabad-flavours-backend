@@ -16,6 +16,8 @@ export interface IEvent extends Document {
   organizer: string;
   price: string;
   capacity: number;
+  status: 'upcoming' | 'recurring' | 'past';
+  featured: boolean;
 
   createdAt: Date;
   updatedAt: Date;
@@ -31,6 +33,8 @@ const EventSchema = new Schema<IEvent>(
     organizer: { type: String, required: true }, // Ideally ref to User, but keeping simple string as per plan/other models for now
     price: { type: String, required: true },
     capacity: { type: Number, required: true },
+    status: { type: String, enum: ['upcoming', 'recurring', 'past'], default: 'upcoming' },
+    featured: { type: Boolean, default: false },
   },
   { timestamps: true }
 );

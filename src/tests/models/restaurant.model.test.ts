@@ -5,7 +5,8 @@ describe('Restaurant Model Test', () => {
   it('should create & save restaurant successfully', async () => {
     const validRestaurant = new Restaurant({
       name: 'The Great Indian Kitchen',
-      estabilishmentType: 'Fine Dining',
+      establishmentType: 'Fine Dining',
+      cuisine: 'Mughlai',
       priceRange: '$$$',
       rating: 4.5,
       image: 'restaurant.jpg',
