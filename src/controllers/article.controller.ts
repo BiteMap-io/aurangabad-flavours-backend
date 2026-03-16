@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import ArticleService from '../services/article.service';
+import { AuthRequest } from '../middleware/auth.middleware';
 
 /**
  * @author Denizuh
@@ -18,9 +19,13 @@ class ArticleController {
    * @param req - Express request object
    * @param res - Express response object
    */
-  createArticle = async (req: Request, res: Response): Promise<void> => {
+  createArticle = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
-      const article = await this.articleService.createArticle(req.body);
+      const articleData = {
+        ...req.body,
+        author: req.body.author || req.user?._id
+      };
+      const article = await this.articleService.createArticle(articleData);
       res.status(201).json(article);
     } catch (error) {
       console.error('Error creating article:', error);
@@ -36,6 +41,24 @@ class ArticleController {
   getArticleById = async (req: Request, res: Response): Promise<void> => {
     try {
       const article = await this.articleService.getArticleById(req.params.id);
+      if (article) {
+        res.status(200).json(article);
+      } else {
+        res.status(404).json({ error: 'Article not found' });
+      }
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to retrieve article' });
+    }
+  };
+
+  /**
+   * Handle retrieving an article by Slug
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  getArticleBySlug = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const article = await this.articleService.getArticleBySlug(req.params.slug);
       if (article) {
         res.status(200).json(article);
       } else {

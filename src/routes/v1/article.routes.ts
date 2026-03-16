@@ -46,6 +46,26 @@ router.get('/:id', articleController.getArticleById);
 
 /**
  * @swagger
+ * /v1/articles/s/{slug}:
+ *   get:
+ *     summary: Get article by slug (Public)
+ *     tags: [Articles]
+ *     parameters:
+ *       - in: path
+ *         name: slug
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Article details
+ *       404:
+ *         description: Article not found
+ */
+router.get('/s/:slug', articleController.getArticleBySlug);
+
+/**
+ * @swagger
  * /v1/articles:
  *   post:
  *     summary: Create a new article

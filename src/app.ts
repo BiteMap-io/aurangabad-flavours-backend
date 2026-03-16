@@ -11,28 +11,31 @@ import { localhostOnly } from './middleware/localhostOnly.middleware';
 
 const app = express();
 
-app.use(helmet());
+app.use(
+  helmet({
+    crossOriginResourcePolicy: { policy: 'cross-origin' },
+  })
+);
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  if (origin) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-  }
-  res.setHeader('Access-Control-Allow-Credentials', 'true');
-  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, PATCH, OPTIONS');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-Requested-With, Content-Type, Authorization, Accept, Origin'
-  );
-
-  if (req.method === 'OPTIONS') {
-    return res.sendStatus(200);
-  }
-  next();
-});
+app.use(
+  cors({
+    origin: (origin, callback) => callback(null, true), // Allow all origins
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+    allowedHeaders: ['X-Requested-With', 'Content-Type', 'Authorization', 'Accept', 'Origin'],
+  })
+);
 
 app.use(express.json());
-app.use(morgan(process.env.NODE_ENV === 'production' ? 'combined' : 'dev'));
+
+// Custom morgan tokens for deeper logging in development
+if (process.env.NODE_ENV === 'dev' || process.env.NODE_ENV === 'development') {
+  morgan.token('body', (req: any) => JSON.stringify(req.body));
+  morgan.token('query', (req: any) => JSON.stringify(req.query));
+  app.use(morgan('🚀 :method :url :status :response-time ms - 📦 body: :body - 🔍 query: :query'));
+} else {
+  app.use(morgan('combined'));
+}
 
 // Swagger documentation - Localhost only
 app.use('/api-docs', localhostOnly, swaggerUi.serve, swaggerUi.setup(swaggerSpec));

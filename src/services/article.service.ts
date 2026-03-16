@@ -30,6 +30,15 @@ class ArticleService {
   }
 
   /**
+   * Get an article by Slug
+   * @param slug - The slug of the article to retrieve
+   * @returns The article document or null if not found
+   */
+  async getArticleBySlug(slug: string): Promise<IArticle | null> {
+    return Article.findOne({ slug }).populate('author').exec();
+  }
+
+  /**
    * Get all articles
    * @returns List of all articles
    */
