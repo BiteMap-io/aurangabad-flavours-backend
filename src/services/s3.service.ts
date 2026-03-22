@@ -14,6 +14,17 @@ class S3Service {
     });
   }
 
+  /**
+   * Get the public URL for an S3 object
+   * @param key - The S3 object key
+   * @returns The full HTTPS URL
+   */
+  getFileUrl(key: string): string {
+    const bucket = config.s3Bucket;
+    if (!bucket) return '';
+    return `https://${bucket}.s3.${config.aws.region}.amazonaws.com/${key}`;
+  }
+
   async uploadBuffer(key: string, buffer: Buffer, contentType = 'application/octet-stream') {
     const bucket = config.s3Bucket;
     if (!bucket) throw new Error('S3_BUCKET not configured');
@@ -26,7 +37,11 @@ class S3Service {
     });
 
     await this.client.send(cmd);
-    return { bucket, key };
+    return {
+      bucket,
+      key,
+      url: this.getFileUrl(key),
+    };
   }
 
   async deleteObject(key: string) {

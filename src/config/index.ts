@@ -11,6 +11,7 @@ const config = {
     email: process.env.ADMIN_EMAIL || 'admin@aurangabadflavours.com',
     password: process.env.ADMIN_PASSWORD || 'adminPassword123!',
   },
+  jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_change_me',
 };
 
 export default config;

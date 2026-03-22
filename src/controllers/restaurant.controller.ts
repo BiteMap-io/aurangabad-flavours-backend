@@ -24,9 +24,7 @@ class RestaurantController {
     try {
       if (req.file) {
         const key = `restaurants/${Date.now()}-${req.file.originalname}`;
-        const { bucket } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
-        // Construct S3 URL
-        const url = `https://${bucket}.s3.${config.aws.region}.amazonaws.com/${key}`;
+        const { url } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
         req.body.image = url;
       }
 
@@ -79,9 +77,7 @@ class RestaurantController {
     try {
       if (req.file) {
         const key = `restaurants/${Date.now()}-${req.file.originalname}`;
-        const { bucket } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
-        // Construct S3 URL
-        const url = `https://${bucket}.s3.${config.aws.region}.amazonaws.com/${key}`;
+        const { url } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
         req.body.image = url;
       }
 

@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { IUser } from '../models/user.model';
+import config from '../config';
 
 export interface AuthRequest extends Request {
   user?: Partial<IUser>;
@@ -14,7 +15,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'default_secret');
+    const decoded = jwt.verify(token, config.jwtSecret);
     req.user = decoded as Partial<IUser>;
     next();
   } catch (err) {

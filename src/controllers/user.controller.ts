@@ -20,7 +20,7 @@ class UserController {
       const user = await this.userService.createUser(req.body);
       const token = jwt.sign(
         { id: user._id, email: user.email, userType: user.userType },
-        process.env.JWT_SECRET || 'default_secret',
+        config.jwtSecret,
         { expiresIn: '1d' }
       );
 
@@ -54,7 +54,7 @@ class UserController {
 
       const token = jwt.sign(
         { id: user._id, email: user.email, userType: user.userType },
-        process.env.JWT_SECRET || 'default_secret',
+        config.jwtSecret,
         { expiresIn: '1d' }
       );
 

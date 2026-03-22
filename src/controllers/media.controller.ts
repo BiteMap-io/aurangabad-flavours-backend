@@ -17,8 +17,7 @@ class MediaController {
       }
 
       const key = `media/${Date.now()}-${req.file.originalname}`;
-      const { bucket } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
-      const url = `https://${bucket}.s3.${config.aws.region}.amazonaws.com/${key}`;
+      const { url } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
 
       const media = await mediaService.createMedia({
         name: req.file.originalname,
