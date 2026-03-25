@@ -12,9 +12,7 @@ const config = {
     password: process.env.ADMIN_PASSWORD || 'adminPassword123!',
   },
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_change_me',
-  corsOrigin: process.env.CORS_ORIGIN
-    ? process.env.CORS_ORIGIN.split(',')
-    : ['http://localhost:3000'],
+  corsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['*'],
 };
 
 export default config;

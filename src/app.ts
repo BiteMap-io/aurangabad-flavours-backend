@@ -12,6 +12,8 @@ import config from './config';
 
 const app = express();
 
+console.log('🌍 Allowed CORS Origins:', config.corsOrigin.join(', '));
+
 app.use(
   helmet({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
