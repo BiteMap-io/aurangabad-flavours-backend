@@ -1,0 +1,15 @@
+node_modules
+dist
+.env
+.git
+.vscode
+.github
+README.md
+docker-compose.dev.yml
+Dockerfile
+.dockerignore
+package-lock.json
+jest.config.ts
+vercel.json
+docs
+src/scripts
