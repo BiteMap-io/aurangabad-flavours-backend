@@ -19,9 +19,9 @@ class UserController {
     try {
       const user = await this.userService.createUser(req.body);
       const token = jwt.sign(
-        { id: user._id, email: user.email, userType: user.userType },
+        { id: user._id, email: user.email, name: user.name, userType: user.userType },
         config.jwtSecret,
-        { expiresIn: '1d' }
+        { expiresIn: '7d' }
       );
 
       res.status(201).json({ user, token });
@@ -53,9 +53,9 @@ class UserController {
       }
 
       const token = jwt.sign(
-        { id: user._id, email: user.email, userType: user.userType },
+        { id: user._id, email: user.email, name: user.name, userType: user.userType },
         config.jwtSecret,
-        { expiresIn: '1d' }
+        { expiresIn: '7d' }
       );
 
       res.status(200).json({ user, token });

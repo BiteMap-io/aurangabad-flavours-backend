@@ -1,7 +1,28 @@
 import { Request, Response } from 'express';
 import RestaurantService from '../services/restaurant.service';
 import s3Service from '../services/s3.service';
-import config from '../config';
+import * as XLSX from 'xlsx';
+
+// Parse Excel/CSV buffer → menu items array
+function parseMenuExcel(buffer: Buffer): { name: string; category: string; price: number; isVeg: boolean }[] {
+  try {
+    const wb = XLSX.read(buffer, { type: 'buffer' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows: any[] = XLSX.utils.sheet_to_json(ws, { defval: '' });
+    return rows
+      .filter(r => r.name || r.Name || r.ITEM || r.item || r['Item Name'])
+      .map(r => ({
+        name: String(r.name || r.Name || r.ITEM || r.item || r['Item Name'] || '').trim(),
+        category: String(r.category || r.Category || r.CATEGORY || r.type || r.Type || '').trim(),
+        price: parseFloat(String(r.price || r.Price || r.PRICE || r.rate || r.Rate || '0')) || 0,
+        isVeg: String(r.isVeg || r.veg || r.Veg || r.type || '').toLowerCase().includes('veg')
+          && !String(r.isVeg || r.veg || r.Veg || r.type || '').toLowerCase().includes('non'),
+      }))
+      .filter(item => item.name.length > 0);
+  } catch {
+    return [];
+  }
+}
 
 /**
  * @author Denizuh
@@ -22,10 +43,45 @@ class RestaurantController {
    */
   createRestaurant = async (req: Request, res: Response): Promise<void> => {
     try {
-      if (req.file) {
-        const key = `restaurants/${Date.now()}-${req.file.originalname}`;
-        const { url } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+      if (files?.image?.[0]) {
+        const f = files.image[0];
+        const key = `restaurants/${Date.now()}-${f.originalname}`;
+        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
         req.body.image = url;
+      }
+
+      // Parse menu Excel if uploaded
+      if (files?.menu?.[0]) {
+        req.body.menuItems = parseMenuExcel(files.menu[0].buffer);
+      }
+
+      // Parse location coordinates from FormData strings → numbers
+      if (req.body['location[coordinates][0]'] !== undefined) {
+        req.body.location = {
+          type: req.body['location[type]'] || 'Point',
+          coordinates: [
+            parseFloat(req.body['location[coordinates][0]']),
+            parseFloat(req.body['location[coordinates][1]']),
+          ],
+        };
+        delete req.body['location[type]'];
+        delete req.body['location[coordinates][0]'];
+        delete req.body['location[coordinates][1]'];
+      } else if (req.body.location && typeof req.body.location === 'string') {
+        try { req.body.location = JSON.parse(req.body.location); } catch {}
+      }
+
+      if (req.body.rating !== undefined) req.body.rating = parseFloat(req.body.rating);
+      if (req.body.seatingCapacity !== undefined) req.body.seatingCapacity = parseFloat(req.body.seatingCapacity) || 0;
+      if (req.body.avgPricePerPerson !== undefined) req.body.avgPricePerPerson = parseFloat(req.body.avgPricePerPerson) || 0;
+
+      // Parse JSON-stringified nested objects from FormData
+      for (const key of ['extraFacilities', 'food', 'staff', 'environment']) {
+        if (req.body[key] && typeof req.body[key] === 'string') {
+          try { req.body[key] = JSON.parse(req.body[key]); } catch {}
+        }
       }
 
       const restaurant = await this.restaurantService.createRestaurant(req.body);
@@ -75,13 +131,52 @@ class RestaurantController {
    */
   updateRestaurant = async (req: Request, res: Response): Promise<void> => {
     try {
-      if (req.file) {
-        const key = `restaurants/${Date.now()}-${req.file.originalname}`;
-        const { url } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
+      const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
+
+      if (files?.image?.[0]) {
+        const f = files.image[0];
+        const key = `restaurants/${Date.now()}-${f.originalname}`;
+        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
         req.body.image = url;
       }
 
-      const restaurant = await this.restaurantService.updateRestaurant(req.params.id, req.body);
+      // Parse menu Excel if uploaded
+      if (files?.menu?.[0]) {
+        req.body.menuItems = parseMenuExcel(files.menu[0].buffer);
+      }
+
+      // Parse location coordinates from FormData strings → numbers
+      if (req.body['location[coordinates][0]'] !== undefined) {
+        req.body.location = {
+          type: req.body['location[type]'] || 'Point',
+          coordinates: [
+            parseFloat(req.body['location[coordinates][0]']),
+            parseFloat(req.body['location[coordinates][1]']),
+          ],
+        };
+        delete req.body['location[type]'];
+        delete req.body['location[coordinates][0]'];
+        delete req.body['location[coordinates][1]'];
+      } else if (req.body.location && typeof req.body.location === 'string') {
+        try { req.body.location = JSON.parse(req.body.location); } catch {}
+      }
+
+      // Strip Mongoose read-only / internal fields that cause cast errors
+      const { _id, __v, createdAt, updatedAt, dishes, reviews, views, ...updateData } = req.body;
+
+      // Ensure numeric types
+      if (updateData.rating !== undefined) updateData.rating = parseFloat(updateData.rating);
+      if (updateData.seatingCapacity !== undefined) updateData.seatingCapacity = parseFloat(updateData.seatingCapacity) || 0;
+      if (updateData.avgPricePerPerson !== undefined) updateData.avgPricePerPerson = parseFloat(updateData.avgPricePerPerson) || 0;
+
+      // Parse JSON-stringified nested objects from FormData
+      for (const key of ['extraFacilities', 'food', 'staff', 'environment']) {
+        if (updateData[key] && typeof updateData[key] === 'string') {
+          try { updateData[key] = JSON.parse(updateData[key]); } catch {}
+        }
+      }
+
+      const restaurant = await this.restaurantService.updateRestaurant(req.params.id, updateData);
       if (restaurant) {
         res.status(200).json(restaurant);
       } else {
@@ -129,6 +224,44 @@ class RestaurantController {
       res.status(200).json(restaurant);
     } catch (error) {
       res.status(500).json({ error: 'Failed to toggle featured status' });
+    }
+  };
+
+  addReview = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { rating, comment } = req.body;
+      const user = (req as any).user;
+
+      if (!rating || rating < 1 || rating > 5) {
+        res.status(400).json({ error: 'Rating must be between 1 and 5' });
+        return;
+      }
+
+      const restaurant = await this.restaurantService.getRestaurantById(req.params.id);
+      if (!restaurant) {
+        res.status(404).json({ error: 'Restaurant not found' });
+        return;
+      }
+
+      const review = {
+        user: user.id,
+        userName: user.name || user.email,
+        rating: Number(rating),
+        comment: comment || '',
+        createdAt: new Date(),
+      };
+
+      restaurant.reviews.push(review as any);
+
+      // Recalculate average rating
+      const total = restaurant.reviews.reduce((sum: number, r: any) => sum + r.rating, 0);
+      restaurant.rating = Math.round((total / restaurant.reviews.length) * 10) / 10;
+
+      await restaurant.save();
+      res.status(201).json(restaurant);
+    } catch (error) {
+      console.error('Error adding review:', error);
+      res.status(500).json({ error: 'Failed to add review' });
     }
   };
 }

@@ -78,7 +78,7 @@ router.post(
   '/',
   authenticate,
   authorize(['admin']),
-  upload.single('image'),
+  upload.fields([{ name: 'image', maxCount: 1 }, { name: 'menu', maxCount: 1 }]),
   restaurantController.createRestaurant
 );
 
@@ -119,7 +119,7 @@ router.put(
   '/:id',
   authenticate,
   authorize(['admin']),
-  upload.single('image'),
+  upload.fields([{ name: 'image', maxCount: 1 }, { name: 'menu', maxCount: 1 }]),
   restaurantController.updateRestaurant
 );
 
@@ -167,5 +167,8 @@ router.patch(
   authorize(['admin']),
   restaurantController.toggleFeatured
 );
+
+// ── Reviews (public POST, public GET via getById) ──────────────────────────
+router.post('/:id/reviews', authenticate, restaurantController.addReview);
 
 export default router;
