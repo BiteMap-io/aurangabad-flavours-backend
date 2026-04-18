@@ -3,6 +3,38 @@ import RestaurantService from '../services/restaurant.service';
 import s3Service from '../services/s3.service';
 import * as XLSX from 'xlsx';
 
+const slugify = (text: string) =>
+  text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
+
+const decodeBase64 = (base64String: string) => {
+  // Handle strings with or without data:image prefix
+  const matches = base64String.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+  
+  if (matches && matches.length === 3) {
+    return {
+      type: matches[1],
+      buffer: Buffer.from(matches[2], 'base64'),
+    };
+  }
+  
+  // If no prefix, assume it's just raw base64 and try to guess type from beginning of buffer
+  try {
+    const buffer = Buffer.from(base64String.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
+    return {
+      type: 'image/png', // fallback
+      buffer,
+    };
+  } catch (e) {
+    return null;
+  }
+};
+
 // Parse Excel/CSV buffer → menu items array
 function parseMenuExcel(buffer: Buffer): { name: string; category: string; price: number; isVeg: boolean }[] {
   try {
@@ -45,12 +77,31 @@ class RestaurantController {
     try {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
+      const restaurantName = req.body.name || 'unknown';
+      const folder = slugify(restaurantName);
+
+      console.log(`DEBUG [Create]: Image field type: ${typeof req.body.image}, length: ${req.body.image?.length}`);
+
       if (files?.image?.[0]) {
         const f = files.image[0];
-        const key = `restaurants/${Date.now()}-${f.originalname}`;
+        const key = `restaurants/${folder}/${Date.now()}-${f.originalname}`;
         const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
         req.body.image = url;
+        console.log(`successfully stored that mf: ${url}`);
+      } else if (typeof req.body.image === 'string' && (req.body.image.startsWith('data:image/') || req.body.image.length > 500)) {
+        console.log('DEBUG [Create]: Detected potential base64 string');
+        const decoded = decodeBase64(req.body.image);
+        if (decoded) {
+          const extension = decoded.type.split('/')[1] || 'png';
+          const key = `restaurants/${folder}/${Date.now()}-image.${extension}`;
+          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          req.body.image = url;
+          console.log(`successfully stored that mf (base64): ${url}`);
+        } else {
+          console.log('DEBUG [Create]: Failed to decode base64');
+        }
       }
+
 
       // Parse menu Excel if uploaded
       if (files?.menu?.[0]) {
@@ -133,12 +184,26 @@ class RestaurantController {
     try {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
+      const restaurantName = req.body.name || 'updated-restaurant';
+      const folder = slugify(restaurantName);
+
       if (files?.image?.[0]) {
         const f = files.image[0];
-        const key = `restaurants/${Date.now()}-${f.originalname}`;
+        const key = `restaurants/${folder}/${Date.now()}-${f.originalname}`;
         const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
         req.body.image = url;
+        console.log(`successfully stored that mf (update): ${url}`);
+      } else if (typeof req.body.image === 'string' && req.body.image.startsWith('data:image/')) {
+        const decoded = decodeBase64(req.body.image);
+        if (decoded) {
+          const extension = decoded.type.split('/')[1] || 'png';
+          const key = `restaurants/${folder}/${Date.now()}-image.${extension}`;
+          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          req.body.image = url;
+          console.log(`successfully stored that mf (update base64): ${url}`);
+        }
       }
+
 
       // Parse menu Excel if uploaded
       if (files?.menu?.[0]) {

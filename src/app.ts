@@ -30,11 +30,15 @@ app.use(
   })
 );
 
-app.use(express.json());
+app.use(express.json({ limit: '50mb' }));
+app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 // Custom morgan tokens for deeper logging in development
 if (process.env.NODE_ENV === 'dev' || process.env.NODE_ENV === 'development') {
-  morgan.token('body', (req: any) => JSON.stringify(req.body));
+  morgan.token('body', (req: any) => {
+    const body = JSON.stringify(req.body);
+    return body.length > 500 ? body.substring(0, 500) + '... [truncated]' : body;
+  });
   morgan.token('query', (req: any) => JSON.stringify(req.query));
   app.use(morgan('🚀 :method :url :status :response-time ms - 📦 body: :body - 🔍 query: :query'));
 } else {

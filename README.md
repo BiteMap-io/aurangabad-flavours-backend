@@ -2,6 +2,13 @@
 
 Basic TypeScript Express backend scaffold using MongoDB (Mongoose) and AWS S3 for storage.
 
+### Storage (S3 / Google Cloud)
+- `S3_ENDPOINT`: Storage provider endpoint (e.g., `https://storage.googleapis.com`)
+- `S3_REGION`: Storage region (use `auto` for GCS)
+- `S3_ACCESS_KEY_ID`: Your HMAC Access Key
+- `S3_SECRET_ACCESS_KEY`: Your HMAC Secret Key
+- `S3_BUCKET`: The name of your bucket
+
 Quick start
 
 1. Copy `.env.example` to `.env` and fill values.
