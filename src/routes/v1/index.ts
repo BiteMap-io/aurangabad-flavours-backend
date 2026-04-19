@@ -10,6 +10,7 @@ import eventRoutes from './event.routes';
 import settingsRoutes from './settings.routes';
 import mediaRoutes from './media.routes';
 import adminRoutes from './admin.routes';
+import galleryRoutes from './gallery.routes';
 
 const router = Router();
 
@@ -23,5 +24,6 @@ router.use('/events', eventRoutes);
 router.use('/settings', settingsRoutes);
 router.use('/media', mediaRoutes);
 router.use('/admin', adminRoutes);
+router.use('/gallery', galleryRoutes);
 
 export default router;
