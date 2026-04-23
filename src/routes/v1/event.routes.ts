@@ -1,9 +1,14 @@
 import { Router } from 'express';
+import multer from 'multer';
 import eventController from '../../controllers/event.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/authorize.middleware';
 
 const router = Router();
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fieldSize: 50 * 1024 * 1024 }
+});
 
 /**
  * @swagger
@@ -85,7 +90,13 @@ router.get('/:id', eventController.getEventById);
  *       201:
  *         description: Event created
  */
-router.post('/', authenticate, authorize(['admin']), eventController.createEvent);
+router.post(
+  '/', 
+  authenticate, 
+  authorize(['admin']), 
+  upload.single('image'),
+  eventController.createEvent
+);
 
 /**
  * @swagger
@@ -128,7 +139,13 @@ router.post('/', authenticate, authorize(['admin']), eventController.createEvent
  *       200:
  *         description: Event updated
  */
-router.put('/:id', authenticate, authorize(['admin']), eventController.updateEvent);
+router.put(
+  '/:id', 
+  authenticate, 
+  authorize(['admin']), 
+  upload.single('image'),
+  eventController.updateEvent
+);
 
 /**
  * @swagger

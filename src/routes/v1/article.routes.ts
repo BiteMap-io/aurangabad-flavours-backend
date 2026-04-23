@@ -1,9 +1,14 @@
 import { Router } from 'express';
+import multer from 'multer';
 import articleController from '../../controllers/article.controller';
 import { authenticate } from '../../middleware/auth.middleware';
 import { authorize } from '../../middleware/authorize.middleware';
 
 const router = Router();
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fieldSize: 50 * 1024 * 1024 }
+});
 
 /**
  * @swagger
@@ -104,7 +109,13 @@ router.get('/s/:slug', articleController.getArticleBySlug);
  *       201:
  *         description: Article created
  */
-router.post('/', authenticate, authorize(['admin']), articleController.createArticle);
+router.post(
+  '/', 
+  authenticate, 
+  authorize(['admin']), 
+  upload.single('image'),
+  articleController.createArticle
+);
 
 /**
  * @swagger
@@ -142,7 +153,13 @@ router.post('/', authenticate, authorize(['admin']), articleController.createArt
  *       200:
  *         description: Article updated
  */
-router.put('/:id', authenticate, authorize(['admin']), articleController.updateArticle);
+router.put(
+  '/:id', 
+  authenticate, 
+  authorize(['admin']), 
+  upload.single('image'),
+  articleController.updateArticle
+);
 
 /**
  * @swagger

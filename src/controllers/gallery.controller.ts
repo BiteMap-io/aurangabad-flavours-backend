@@ -58,13 +58,25 @@ class GalleryController {
         return;
       }
 
+      let tags = [];
+      if (Array.isArray(req.body.tags)) {
+        tags = req.body.tags;
+      } else if (typeof req.body.tags === 'string') {
+        // Handle comma separated strings or stringified JSON arrays
+        if (req.body.tags.startsWith('[') && req.body.tags.endsWith(']')) {
+          try { tags = JSON.parse(req.body.tags); } catch { tags = [req.body.tags]; }
+        } else {
+          tags = req.body.tags.split(',').map((t: string) => t.trim()).filter(Boolean);
+        }
+      }
+
       const galleryItem = await galleryService.createGalleryItem({
         title: req.body.title || originalName,
         description: req.body.description || '',
         url: imageUrl,
         type: fileType,
         size: fileSize,
-        tags: Array.isArray(req.body.tags) ? req.body.tags : req.body.tags ? [req.body.tags] : [],
+        tags: tags,
       });
 
       res.status(201).json(galleryItem);

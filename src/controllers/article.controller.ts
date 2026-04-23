@@ -1,6 +1,32 @@
 import { Request, Response } from 'express';
 import ArticleService from '../services/article.service';
 import { AuthRequest } from '../middleware/auth.middleware';
+import s3Service from '../services/s3.service';
+
+const slugify = (text: string) =>
+  text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-');
+
+const decodeBase64 = (base64String: string) => {
+  const matches = base64String.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
+  if (matches && matches.length === 3) {
+    return {
+      type: matches[1],
+      buffer: Buffer.from(matches[2], 'base64'),
+    };
+  }
+  try {
+    const buffer = Buffer.from(base64String.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
+    return { type: 'image/png', buffer };
+  } catch (e) {
+    return null;
+  }
+};
 
 /**
  * @author Denizuh
@@ -16,11 +42,29 @@ class ArticleController {
 
   /**
    * Handle creating a new article
-   * @param req - Express request object
-   * @param res - Express response object
    */
   createArticle = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
+      const articleTitle = req.body.title || 'article';
+      const folder = slugify(articleTitle);
+
+      if (req.file) {
+        const f = req.file;
+        const key = `articles/${folder}/${Date.now()}-${f.originalname}`;
+        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
+        req.body.image = url;
+        console.log(`successfully stored that mf (article): ${url}`);
+      } else if (typeof req.body.image === 'string' && (req.body.image.startsWith('data:image/') || req.body.image.length > 500)) {
+        const decoded = decodeBase64(req.body.image);
+        if (decoded) {
+          const extension = decoded.type.split('/')[1] || 'png';
+          const key = `articles/${folder}/${Date.now()}-image.${extension}`;
+          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          req.body.image = url;
+          console.log(`successfully stored that mf (article base64): ${url}`);
+        }
+      }
+
       const articleData = {
         ...req.body,
         author: req.body.author || req.user?._id
@@ -35,8 +79,6 @@ class ArticleController {
 
   /**
    * Handle retrieving an article by ID
-   * @param req - Express request object
-   * @param res - Express response object
    */
   getArticleById = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -53,8 +95,6 @@ class ArticleController {
 
   /**
    * Handle retrieving an article by Slug
-   * @param req - Express request object
-   * @param res - Express response object
    */
   getArticleBySlug = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -71,8 +111,6 @@ class ArticleController {
 
   /**
    * Handle retrieving all articles
-   * @param req - Express request object
-   * @param res - Express response object
    */
   getAllArticles = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -85,11 +123,29 @@ class ArticleController {
 
   /**
    * Handle updating an article by ID
-   * @param req - Express request object
-   * @param res - Express response object
    */
   updateArticle = async (req: Request, res: Response): Promise<void> => {
     try {
+      const articleTitle = req.body.title || 'updated-article';
+      const folder = slugify(articleTitle);
+
+      if (req.file) {
+        const f = req.file;
+        const key = `articles/${folder}/${Date.now()}-${f.originalname}`;
+        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
+        req.body.image = url;
+        console.log(`successfully stored that mf (update article): ${url}`);
+      } else if (typeof req.body.image === 'string' && req.body.image.startsWith('data:image/')) {
+        const decoded = decodeBase64(req.body.image);
+        if (decoded) {
+          const extension = decoded.type.split('/')[1] || 'png';
+          const key = `articles/${folder}/${Date.now()}-image.${extension}`;
+          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          req.body.image = url;
+          console.log(`successfully stored that mf (update article base64): ${url}`);
+        }
+      }
+
       const article = await this.articleService.updateArticle(req.params.id, req.body);
       if (article) {
         res.status(200).json(article);
@@ -97,14 +153,13 @@ class ArticleController {
         res.status(404).json({ error: 'Article not found' });
       }
     } catch (error) {
+      console.error('Error updating article:', error);
       res.status(500).json({ error: 'Failed to update article' });
     }
   };
 
   /**
    * Handle deleting an article by ID
-   * @param req - Express request object
-   * @param res - Express response object
    */
   deleteArticle = async (req: Request, res: Response): Promise<void> => {
     try {
@@ -121,8 +176,6 @@ class ArticleController {
 
   /**
    * Handle toggling article status
-   * @param req - Express request object
-   * @param res - Express response object
    */
   toggleStatus = async (req: Request, res: Response): Promise<void> => {
     try {
