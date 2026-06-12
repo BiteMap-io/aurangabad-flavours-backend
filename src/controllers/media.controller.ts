@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import mediaService from '../services/media.service';
 import s3Service from '../services/s3.service';
-import config from '../config';
+import { uploadImage } from '../utils/image';
 
 class MediaController {
   /**
@@ -16,14 +16,19 @@ class MediaController {
         return;
       }
 
-      const key = `media/${Date.now()}-${req.file.originalname}`;
-      const { url } = await s3Service.uploadBuffer(key, req.file.buffer, req.file.mimetype);
+      // Images are compressed to WebP; other file types are stored as-is.
+      const { url, type, size } = await uploadImage(
+        'media',
+        req.file.buffer,
+        req.file.mimetype,
+        req.file.originalname
+      );
 
       const media = await mediaService.createMedia({
         name: req.file.originalname,
         url,
-        type: req.file.mimetype,
-        size: req.file.size,
+        type,
+        size,
       });
 
       res.status(201).json(media);

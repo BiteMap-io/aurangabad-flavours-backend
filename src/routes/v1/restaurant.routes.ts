@@ -81,7 +81,11 @@ router.post(
   '/',
   authenticate,
   authorize(['admin']),
-  upload.fields([{ name: 'image', maxCount: 1 }, { name: 'menu', maxCount: 1 }]),
+  upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'menu', maxCount: 1 },
+    { name: 'gallery', maxCount: 12 },
+  ]),
   restaurantController.createRestaurant
 );
 
@@ -122,7 +126,11 @@ router.put(
   '/:id',
   authenticate,
   authorize(['admin']),
-  upload.fields([{ name: 'image', maxCount: 1 }, { name: 'menu', maxCount: 1 }]),
+  upload.fields([
+    { name: 'image', maxCount: 1 },
+    { name: 'menu', maxCount: 1 },
+    { name: 'gallery', maxCount: 12 },
+  ]),
   restaurantController.updateRestaurant
 );
 

@@ -1,23 +1,7 @@
 import { Request, Response } from 'express';
 import galleryService from '../services/gallery.service';
 import s3Service from '../services/s3.service';
-
-const decodeBase64 = (base64String: string) => {
-  const matches = base64String.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-  if (matches && matches.length === 3) {
-    return {
-      type: matches[1],
-      buffer: Buffer.from(matches[2], 'base64'),
-    };
-  }
-  // Fallback for raw base64
-  try {
-    const buffer = Buffer.from(base64String.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
-    return { type: 'image/png', buffer };
-  } catch {
-    return null;
-  }
-};
+import { decodeBase64, uploadImage } from '../utils/image';
 
 class GalleryController {
   /**
@@ -33,23 +17,18 @@ class GalleryController {
       if (req.file) {
         const f = req.file;
         originalName = f.originalname;
-        const key = `gallery/${Date.now()}-${originalName}`;
-        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
+        const { url, type, size } = await uploadImage('gallery', f.buffer, f.mimetype, originalName);
         imageUrl = url;
-        fileType = f.mimetype;
-        fileSize = f.size;
-        console.log(`successfully stored gallery item: ${url}`);
+        fileType = type;
+        fileSize = size;
       } else if (typeof req.body.image === 'string' && (req.body.image.startsWith('data:image/') || req.body.image.length > 500)) {
         const decoded = decodeBase64(req.body.image);
         if (decoded) {
-          const extension = decoded.type.split('/')[1] || 'png';
-          originalName = `gallery-item-${Date.now()}.${extension}`;
-          const key = `gallery/${Date.now()}-${originalName}`;
-          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          originalName = `gallery-item-${Date.now()}`;
+          const { url, type, size } = await uploadImage('gallery', decoded.buffer, decoded.type, originalName);
           imageUrl = url;
-          fileType = decoded.type;
-          fileSize = decoded.buffer.length;
-          console.log(`successfully stored gallery base64 item: ${url}`);
+          fileType = type;
+          fileSize = size;
         }
       }
 

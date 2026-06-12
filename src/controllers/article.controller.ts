@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import ArticleService from '../services/article.service';
 import { AuthRequest } from '../middleware/auth.middleware';
-import s3Service from '../services/s3.service';
+import { decodeBase64, uploadImage } from '../utils/image';
 
 const slugify = (text: string) =>
   text
@@ -11,22 +11,6 @@ const slugify = (text: string) =>
     .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '')
     .replace(/--+/g, '-');
-
-const decodeBase64 = (base64String: string) => {
-  const matches = base64String.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-  if (matches && matches.length === 3) {
-    return {
-      type: matches[1],
-      buffer: Buffer.from(matches[2], 'base64'),
-    };
-  }
-  try {
-    const buffer = Buffer.from(base64String.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
-    return { type: 'image/png', buffer };
-  } catch (e) {
-    return null;
-  }
-};
 
 /**
  * @author Denizuh
@@ -50,18 +34,13 @@ class ArticleController {
 
       if (req.file) {
         const f = req.file;
-        const key = `articles/${folder}/${Date.now()}-${f.originalname}`;
-        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
+        const { url } = await uploadImage(`articles/${folder}`, f.buffer, f.mimetype, f.originalname);
         req.body.image = url;
-        console.log(`successfully stored that mf (article): ${url}`);
       } else if (typeof req.body.image === 'string' && (req.body.image.startsWith('data:image/') || req.body.image.length > 500)) {
         const decoded = decodeBase64(req.body.image);
         if (decoded) {
-          const extension = decoded.type.split('/')[1] || 'png';
-          const key = `articles/${folder}/${Date.now()}-image.${extension}`;
-          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          const { url } = await uploadImage(`articles/${folder}`, decoded.buffer, decoded.type);
           req.body.image = url;
-          console.log(`successfully stored that mf (article base64): ${url}`);
         }
       }
 
@@ -131,18 +110,13 @@ class ArticleController {
 
       if (req.file) {
         const f = req.file;
-        const key = `articles/${folder}/${Date.now()}-${f.originalname}`;
-        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
+        const { url } = await uploadImage(`articles/${folder}`, f.buffer, f.mimetype, f.originalname);
         req.body.image = url;
-        console.log(`successfully stored that mf (update article): ${url}`);
       } else if (typeof req.body.image === 'string' && req.body.image.startsWith('data:image/')) {
         const decoded = decodeBase64(req.body.image);
         if (decoded) {
-          const extension = decoded.type.split('/')[1] || 'png';
-          const key = `articles/${folder}/${Date.now()}-image.${extension}`;
-          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          const { url } = await uploadImage(`articles/${folder}`, decoded.buffer, decoded.type);
           req.body.image = url;
-          console.log(`successfully stored that mf (update article base64): ${url}`);
         }
       }
 

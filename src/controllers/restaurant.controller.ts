@@ -1,6 +1,6 @@
 import { Request, Response } from 'express';
 import RestaurantService from '../services/restaurant.service';
-import s3Service from '../services/s3.service';
+import { decodeBase64, uploadImage } from '../utils/image';
 import * as XLSX from 'xlsx';
 
 const slugify = (text: string) =>
@@ -11,29 +11,6 @@ const slugify = (text: string) =>
     .replace(/\s+/g, '-')
     .replace(/[^\w-]+/g, '')
     .replace(/--+/g, '-');
-
-const decodeBase64 = (base64String: string) => {
-  // Handle strings with or without data:image prefix
-  const matches = base64String.match(/^data:([A-Za-z-+/]+);base64,(.+)$/);
-  
-  if (matches && matches.length === 3) {
-    return {
-      type: matches[1],
-      buffer: Buffer.from(matches[2], 'base64'),
-    };
-  }
-  
-  // If no prefix, assume it's just raw base64 and try to guess type from beginning of buffer
-  try {
-    const buffer = Buffer.from(base64String.replace(/^data:image\/[a-z]+;base64,/, ''), 'base64');
-    return {
-      type: 'image/png', // fallback
-      buffer,
-    };
-  } catch (e) {
-    return null;
-  }
-};
 
 // Parse Excel/CSV buffer → menu items array
 function parseMenuExcel(buffer: Buffer): { name: string; category: string; price: number; isVeg: boolean }[] {
@@ -54,6 +31,39 @@ function parseMenuExcel(buffer: Buffer): { name: string; category: string; price
   } catch {
     return [];
   }
+}
+
+/**
+ * Build the final gallery URL list for a restaurant: kept existing URLs (sent by the client as
+ * an `existingGallery` JSON array) plus any newly uploaded gallery files (compressed → WebP → CDN).
+ */
+async function buildGalleryUrls(
+  galleryFiles: Express.Multer.File[] | undefined,
+  existingGallery: unknown,
+  folder: string
+): Promise<string[]> {
+  const urls: string[] = [];
+
+  // 1. Existing images the user chose to keep
+  if (existingGallery !== undefined) {
+    let kept: unknown = existingGallery;
+    if (typeof kept === 'string') {
+      try { kept = JSON.parse(kept); } catch { kept = [kept]; }
+    }
+    if (Array.isArray(kept)) {
+      urls.push(...kept.filter((u): u is string => typeof u === 'string' && u.length > 0));
+    }
+  }
+
+  // 2. Newly uploaded files
+  if (galleryFiles?.length) {
+    for (const g of galleryFiles) {
+      const { url } = await uploadImage(`restaurants/${folder}/gallery`, g.buffer, g.mimetype, g.originalname);
+      urls.push(url);
+    }
+  }
+
+  return urls;
 }
 
 /**
@@ -80,25 +90,15 @@ class RestaurantController {
       const restaurantName = req.body.name || 'unknown';
       const folder = slugify(restaurantName);
 
-      console.log(`DEBUG [Create]: Image field type: ${typeof req.body.image}, length: ${req.body.image?.length}`);
-
       if (files?.image?.[0]) {
         const f = files.image[0];
-        const key = `restaurants/${folder}/${Date.now()}-${f.originalname}`;
-        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
+        const { url } = await uploadImage(`restaurants/${folder}`, f.buffer, f.mimetype, f.originalname);
         req.body.image = url;
-        console.log(`successfully stored that mf: ${url}`);
       } else if (typeof req.body.image === 'string' && (req.body.image.startsWith('data:image/') || req.body.image.length > 500)) {
-        console.log('DEBUG [Create]: Detected potential base64 string');
         const decoded = decodeBase64(req.body.image);
         if (decoded) {
-          const extension = decoded.type.split('/')[1] || 'png';
-          const key = `restaurants/${folder}/${Date.now()}-image.${extension}`;
-          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          const { url } = await uploadImage(`restaurants/${folder}`, decoded.buffer, decoded.type);
           req.body.image = url;
-          console.log(`successfully stored that mf (base64): ${url}`);
-        } else {
-          console.log('DEBUG [Create]: Failed to decode base64');
         }
       }
 
@@ -107,6 +107,12 @@ class RestaurantController {
       if (files?.menu?.[0]) {
         req.body.menuItems = parseMenuExcel(files.menu[0].buffer);
       }
+
+      // Gallery images (multiple) — kept existing URLs + newly uploaded files
+      if (files?.gallery?.length || req.body.existingGallery !== undefined) {
+        req.body.gallery = await buildGalleryUrls(files?.gallery, req.body.existingGallery, folder);
+      }
+      delete req.body.existingGallery;
 
       // Parse location coordinates from FormData strings → numbers
       if (req.body['location[coordinates][0]'] !== undefined) {
@@ -189,18 +195,13 @@ class RestaurantController {
 
       if (files?.image?.[0]) {
         const f = files.image[0];
-        const key = `restaurants/${folder}/${Date.now()}-${f.originalname}`;
-        const { url } = await s3Service.uploadBuffer(key, f.buffer, f.mimetype);
+        const { url } = await uploadImage(`restaurants/${folder}`, f.buffer, f.mimetype, f.originalname);
         req.body.image = url;
-        console.log(`successfully stored that mf (update): ${url}`);
       } else if (typeof req.body.image === 'string' && req.body.image.startsWith('data:image/')) {
         const decoded = decodeBase64(req.body.image);
         if (decoded) {
-          const extension = decoded.type.split('/')[1] || 'png';
-          const key = `restaurants/${folder}/${Date.now()}-image.${extension}`;
-          const { url } = await s3Service.uploadBuffer(key, decoded.buffer, decoded.type);
+          const { url } = await uploadImage(`restaurants/${folder}`, decoded.buffer, decoded.type);
           req.body.image = url;
-          console.log(`successfully stored that mf (update base64): ${url}`);
         }
       }
 
@@ -209,6 +210,12 @@ class RestaurantController {
       if (files?.menu?.[0]) {
         req.body.menuItems = parseMenuExcel(files.menu[0].buffer);
       }
+
+      // Gallery images (multiple) — kept existing URLs + newly uploaded files
+      if (files?.gallery?.length || req.body.existingGallery !== undefined) {
+        req.body.gallery = await buildGalleryUrls(files?.gallery, req.body.existingGallery, folder);
+      }
+      delete req.body.existingGallery;
 
       // Parse location coordinates from FormData strings → numbers
       if (req.body['location[coordinates][0]'] !== undefined) {
