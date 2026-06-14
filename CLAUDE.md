@@ -60,7 +60,8 @@ User roles (`UserType` enum in `user.model.ts`): `admin`, `restaurant_owner`, `c
 
 - Routes use `multer` with `memoryStorage()` and a 50mb `fieldSize` limit (to accommodate base64 in text fields).
 - `services/s3.service.ts` is a singleton wrapping `@aws-sdk/client-s3`, configured for **GCS or any S3-compatible endpoint** (`forcePathStyle: true`, strips the `x-id` query param GCS rejects, lazily auto-creates the bucket). Use `uploadBuffer(key, buffer, contentType)` / `deleteObject(key)` / `getFileUrl(key)`.
-- Controllers handle two upload paths: real multipart files (`req.files`) and base64 strings in the JSON/form body (decoded via a `decodeBase64` helper). See `restaurant.controller.ts` for the canonical pattern, including parsing an uploaded `menu` xlsx/csv into `menuItems` via the `xlsx` lib and coercing FormData-flattened fields (e.g. `location[coordinates][0]`, JSON-stringified nested objects).
+- `utils/image.ts` is the centralized image pipeline and the preferred entry point for new image uploads: `decodeBase64` (handles a `data:` URI or raw base64), `compressImage` (re-encodes raster formats to WebP via `sharp` at `WEBP_QUALITY`, honoring EXIF rotation; passes SVG/GIF and any encode failure through untouched so an upload is never silently dropped), and `uploadImage(folder, buffer, mimetype, name)` which compresses then uploads and returns `{ url, type, size }`.
+- Controllers handle two upload paths: real multipart files (`req.files`) and base64 strings in the JSON/form body. See `restaurant.controller.ts` for the canonical pattern, including parsing an uploaded `menu` xlsx/csv into `menuItems` via the `xlsx` lib and coercing FormData-flattened fields (e.g. `location[coordinates][0]`, JSON-stringified nested objects).
 
 ### Config
 

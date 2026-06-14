@@ -103,9 +103,11 @@ class RestaurantController {
       }
 
 
-      // Parse menu Excel if uploaded
+      // Menu items: an uploaded Excel wins; otherwise accept a JSON-stringified array from the form.
       if (files?.menu?.[0]) {
         req.body.menuItems = parseMenuExcel(files.menu[0].buffer);
+      } else if (typeof req.body.menuItems === 'string') {
+        try { req.body.menuItems = JSON.parse(req.body.menuItems); } catch { req.body.menuItems = []; }
       }
 
       // Gallery images (multiple) — kept existing URLs + newly uploaded files
@@ -206,9 +208,11 @@ class RestaurantController {
       }
 
 
-      // Parse menu Excel if uploaded
+      // Menu items: an uploaded Excel wins; otherwise accept a JSON-stringified array from the form.
       if (files?.menu?.[0]) {
         req.body.menuItems = parseMenuExcel(files.menu[0].buffer);
+      } else if (typeof req.body.menuItems === 'string') {
+        try { req.body.menuItems = JSON.parse(req.body.menuItems); } catch { req.body.menuItems = []; }
       }
 
       // Gallery images (multiple) — kept existing URLs + newly uploaded files
