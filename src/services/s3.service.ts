@@ -1,6 +1,7 @@
 import {
   S3Client,
   PutObjectCommand,
+  GetObjectCommand,
   DeleteObjectCommand,
   HeadBucketCommand,
   CreateBucketCommand,
@@ -111,6 +112,20 @@ class S3Service {
       key,
       url: this.getFileUrl(key),
     };
+  }
+
+  /**
+   * Download an object from the bucket.
+   * @param key - The S3 object key
+   * @returns The object's bytes and stored content type
+   */
+  async getObject(key: string): Promise<{ buffer: Buffer; contentType?: string }> {
+    const bucket = config.s3.bucket;
+    if (!bucket) throw new Error('S3_BUCKET not configured');
+
+    const res = await this.client.send(new GetObjectCommand({ Bucket: bucket, Key: key }));
+    const bytes = await res.Body!.transformToByteArray();
+    return { buffer: Buffer.from(bytes), contentType: res.ContentType };
   }
 
   async deleteObject(key: string) {
