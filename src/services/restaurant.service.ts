@@ -30,11 +30,20 @@ class RestaurantService {
   }
 
   /**
-   * Get all restaurants
-   * @returns List of all restaurants
+   * Get all restaurants matching an optional filter
+   * @param filter - Mongoose filter (e.g. restricting to approved listings)
+   * @returns List of matching restaurants
    */
-  async getAllRestaurants(): Promise<IRestaurant[]> {
-    return Restaurant.find().populate('dishes').exec();
+  async getAllRestaurants(filter: Record<string, unknown> = {}): Promise<IRestaurant[]> {
+    return Restaurant.find(filter).populate('dishes').exec();
+  }
+
+  /**
+   * Get every restaurant owned by a given user, regardless of approval status.
+   * @param ownerId - The owning user's ID
+   */
+  async getRestaurantsByOwner(ownerId: string): Promise<IRestaurant[]> {
+    return Restaurant.find({ ownerId }).populate('dishes').exec();
   }
 
   /**

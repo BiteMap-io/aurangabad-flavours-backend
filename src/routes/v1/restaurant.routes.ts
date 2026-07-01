@@ -31,6 +31,20 @@ router.get('/', restaurantController.getAllRestaurants);
 
 /**
  * @swagger
+ * /v1/restaurants/mine:
+ *   get:
+ *     summary: Get every restaurant owned by the authenticated restaurant owner (any approval status)
+ *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of the owner's restaurants
+ */
+router.get('/mine', authenticate, authorize(['restaurant_owner']), restaurantController.getMyRestaurants);
+
+/**
+ * @swagger
  * /v1/restaurants/{id}:
  *   get:
  *     summary: Get restaurant by ID (Public)
@@ -80,7 +94,7 @@ router.get('/:id', restaurantController.getRestaurantById);
 router.post(
   '/',
   authenticate,
-  authorize(['admin']),
+  authorize(['admin', 'restaurant_owner']),
   upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'menu', maxCount: 1 },
@@ -125,7 +139,7 @@ router.post(
 router.put(
   '/:id',
   authenticate,
-  authorize(['admin']),
+  authorize(['admin', 'restaurant_owner']),
   upload.fields([
     { name: 'image', maxCount: 1 },
     { name: 'menu', maxCount: 1 },
@@ -178,6 +192,54 @@ router.patch(
   authorize(['admin']),
   restaurantController.toggleFeatured
 );
+
+/**
+ * @swagger
+ * /v1/restaurants/{id}/approve:
+ *   patch:
+ *     summary: Approve a pending owner-submitted restaurant (Admin)
+ *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Restaurant approved and now public
+ */
+router.patch('/:id/approve', authenticate, authorize(['admin']), restaurantController.approveRestaurant);
+
+/**
+ * @swagger
+ * /v1/restaurants/{id}/reject:
+ *   patch:
+ *     summary: Reject a pending owner-submitted restaurant, with an optional reason (Admin)
+ *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               reason:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Restaurant rejected
+ */
+router.patch('/:id/reject', authenticate, authorize(['admin']), restaurantController.rejectRestaurant);
 
 // ── Reviews (public POST, public GET via getById) ──────────────────────────
 router.post('/:id/reviews', authenticate, restaurantController.addReview);

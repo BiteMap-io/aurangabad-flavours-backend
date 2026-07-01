@@ -39,6 +39,27 @@ class UserService {
   }
 
   /**
+   * Find an existing guest by email (reusing their record across visits) or create a new one.
+   * Throws if the email already belongs to a non-guest account, since a name/phone-only guest
+   * login must never attach to somebody else's real password-protected account.
+   * @param data - name, email, phone for the guest
+   * @returns The guest user document
+   */
+  async findOrCreateGuest(data: { name: string; email: string; phone?: string }): Promise<IUser> {
+    const existing = await User.findOne({ email: data.email }).exec();
+    if (existing) {
+      if (existing.userType !== 'guest') {
+        throw new Error('EMAIL_IN_USE');
+      }
+      existing.name = data.name;
+      if (data.phone) existing.phone = data.phone;
+      return existing.save();
+    }
+    const guest = new User({ ...data, userType: 'guest' });
+    return guest.save();
+  }
+
+  /**
    * Update a user by ID
    * @param userId - The ID of the user to update
    * @param updateData - Data to update the user with

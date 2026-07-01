@@ -73,7 +73,7 @@ router.get('/:id', dishController.getDishById);
  *       201:
  *         description: Dish created
  */
-router.post('/', authenticate, authorize(['admin']), dishController.createDish);
+router.post('/', authenticate, authorize(['admin', 'restaurant_owner']), dishController.createDish);
 
 /**
  * @swagger
@@ -105,7 +105,7 @@ router.post('/', authenticate, authorize(['admin']), dishController.createDish);
  *       200:
  *         description: Dish updated
  */
-router.put('/:id', authenticate, authorize(['admin']), dishController.updateDish);
+router.put('/:id', authenticate, authorize(['admin', 'restaurant_owner']), dishController.updateDish);
 
 /**
  * @swagger
@@ -125,6 +125,6 @@ router.put('/:id', authenticate, authorize(['admin']), dishController.updateDish
  *       200:
  *         description: Dish deleted
  */
-router.delete('/:id', authenticate, authorize(['admin']), dishController.deleteDish);
+router.delete('/:id', authenticate, authorize(['admin', 'restaurant_owner']), dishController.deleteDish);
 
 export default router;

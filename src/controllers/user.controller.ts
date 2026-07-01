@@ -66,6 +66,39 @@ class UserController {
   };
 
   /**
+   * Handle guest login: name/email/phone only, no password. Reuses an existing guest
+   * record by email if one exists, otherwise creates one, and issues the same JWT
+   * shape as a full login so the rest of the app treats guests identically.
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  guestLogin = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const { name, email, phone } = req.body;
+      if (!name || !email) {
+        res.status(400).json({ error: 'Name and email are required' });
+        return;
+      }
+
+      const user = await this.userService.findOrCreateGuest({ name, email, phone });
+      const token = jwt.sign(
+        { id: user._id, email: user.email, name: user.name, userType: user.userType },
+        config.jwtSecret,
+        { expiresIn: '7d' }
+      );
+
+      res.status(200).json({ user, token });
+    } catch (error: any) {
+      if (error?.message === 'EMAIL_IN_USE') {
+        res.status(409).json({ error: 'This email already has an account. Please log in instead.' });
+        return;
+      }
+      console.error('Guest login error:', error);
+      res.status(500).json({ error: 'Guest login failed' });
+    }
+  };
+
+  /**
    * Handle creating a new user (admin only maybe? or same as signup)
    * @param req - Express request object
    * @param res - Express response object

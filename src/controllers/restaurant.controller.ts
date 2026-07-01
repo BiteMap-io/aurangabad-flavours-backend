@@ -1,7 +1,15 @@
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
+import config from '../config';
+import { AuthRequest } from '../middleware/auth.middleware';
 import RestaurantService from '../services/restaurant.service';
 import { decodeBase64, uploadImage } from '../utils/image';
 import * as XLSX from 'xlsx';
+
+// Legacy restaurants created before the approval system existed have no
+// approvalStatus field at all — treat those as approved so nothing already
+// live silently disappears from the public site.
+const APPROVED_FILTER = { $or: [{ approvalStatus: 'approved' }, { approvalStatus: { $exists: false } }] };
 
 const slugify = (text: string) =>
   text
@@ -83,12 +91,29 @@ class RestaurantController {
    * @param req - Express request object
    * @param res - Express response object
    */
-  createRestaurant = async (req: Request, res: Response): Promise<void> => {
+  createRestaurant = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
       const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
       const restaurantName = req.body.name || 'unknown';
       const folder = slugify(restaurantName);
+
+      // A restaurant owner can only ever submit their own, always-pending listing —
+      // never trust a client-sent ownerId/approvalStatus for privilege escalation.
+      // Admin-created listings go live immediately (matches the pre-existing behavior).
+      if (req.user?.userType === 'restaurant_owner') {
+        req.body.ownerId = req.user.id;
+        req.body.approvalStatus = 'pending';
+        // Trust badges are admin-assigned curation, not something an owner can self-declare.
+        req.body.verified = false;
+        req.body.ihmRecommended = false;
+      } else {
+        delete req.body.ownerId;
+        if (req.body.approvalStatus !== 'pending' && req.body.approvalStatus !== 'rejected') {
+          req.body.approvalStatus = 'approved';
+        }
+      }
+      delete req.body.rejectionReason;
 
       if (files?.image?.[0]) {
         const f = files.image[0];
@@ -176,10 +201,84 @@ class RestaurantController {
    */
   getAllRestaurants = async (req: Request, res: Response): Promise<void> => {
     try {
-      const restaurants = await this.restaurantService.getAllRestaurants();
+      // Public callers only ever see approved (or legacy pre-approval) listings.
+      // An admin token unlocks ?status=pending|rejected|all for the review queue.
+      let isAdmin = false;
+      const token = req.header('Authorization')?.replace('Bearer ', '');
+      if (token) {
+        try {
+          const decoded = jwt.verify(token, config.jwtSecret) as { userType?: string };
+          isAdmin = decoded?.userType === 'admin';
+        } catch {
+          // Not a valid admin session — fall through to the public filter.
+        }
+      }
+
+      let filter: Record<string, unknown> = APPROVED_FILTER;
+      if (isAdmin) {
+        const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+        if (status === 'all') filter = {};
+        else if (status === 'pending' || status === 'approved' || status === 'rejected') filter = { approvalStatus: status };
+      }
+
+      const restaurants = await this.restaurantService.getAllRestaurants(filter);
       res.status(200).json(restaurants);
     } catch (error) {
       res.status(500).json({ error: 'Failed to retrieve restaurants' });
+    }
+  };
+
+  /**
+   * Return every restaurant owned by the authenticated restaurant_owner, any status.
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  getMyRestaurants = async (req: AuthRequest, res: Response): Promise<void> => {
+    try {
+      if (!req.user?.id) {
+        res.status(401).json({ error: 'Authentication required' });
+        return;
+      }
+      const restaurants = await this.restaurantService.getRestaurantsByOwner(req.user.id);
+      res.status(200).json(restaurants);
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to retrieve your restaurants' });
+    }
+  };
+
+  /**
+   * Admin-only: approve a pending restaurant so it goes public.
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  approveRestaurant = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const restaurant = await this.restaurantService.updateRestaurant(req.params.id, {
+        approvalStatus: 'approved',
+        rejectionReason: '',
+      } as any);
+      if (restaurant) res.status(200).json(restaurant);
+      else res.status(404).json({ error: 'Restaurant not found' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to approve restaurant' });
+    }
+  };
+
+  /**
+   * Admin-only: reject a pending restaurant with an optional reason.
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  rejectRestaurant = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const restaurant = await this.restaurantService.updateRestaurant(req.params.id, {
+        approvalStatus: 'rejected',
+        rejectionReason: req.body?.reason || '',
+      } as any);
+      if (restaurant) res.status(200).json(restaurant);
+      else res.status(404).json({ error: 'Restaurant not found' });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to reject restaurant' });
     }
   };
 
@@ -188,8 +287,24 @@ class RestaurantController {
    * @param req - Express request object
    * @param res - Express response object
    */
-  updateRestaurant = async (req: Request, res: Response): Promise<void> => {
+  updateRestaurant = async (req: AuthRequest, res: Response): Promise<void> => {
     try {
+      // Owners may only ever edit their own restaurant, and can never touch
+      // ownership/approval fields on the way in.
+      if (req.user?.userType === 'restaurant_owner') {
+        const existing = await this.restaurantService.getRestaurantById(req.params.id);
+        if (!existing || existing.ownerId !== req.user.id) {
+          res.status(403).json({ error: 'Access denied: you do not own this restaurant' });
+          return;
+        }
+        // Trust badges are admin-assigned curation, not something an owner can self-declare.
+        delete req.body.verified;
+        delete req.body.ihmRecommended;
+      }
+      delete req.body.ownerId;
+      delete req.body.approvalStatus;
+      delete req.body.rejectionReason;
+
       const files = req.files as { [fieldname: string]: Express.Multer.File[] } | undefined;
 
       const restaurantName = req.body.name || 'updated-restaurant';

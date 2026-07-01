@@ -30,11 +30,13 @@ class DishService {
   }
 
   /**
-   * Get all dishes
-   * @returns List of all dishes
+   * Get all dishes, optionally filtered by restaurant
+   * @param restaurantId - Restrict results to this restaurant
+   * @returns List of matching dishes
    */
-  async getAllDishes(): Promise<IDish[]> {
-    return Dish.find().exec();
+  async getAllDishes(restaurantId?: string): Promise<IDish[]> {
+    const query = restaurantId ? { restaurantId } : {};
+    return Dish.find(query).exec();
   }
 
   /**

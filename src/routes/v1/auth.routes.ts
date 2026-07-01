@@ -67,4 +67,32 @@ router.post('/signup', userController.signup);
  */
 router.post('/login', userController.login);
 
+/**
+ * @swagger
+ * /v1/auth/guest:
+ *   post:
+ *     summary: Guest login — no password, just name/email/phone
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [name, email]
+ *             properties:
+ *               name:
+ *                 type: string
+ *               email:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Guest session created
+ *       409:
+ *         description: Email already belongs to a full account
+ */
+router.post('/guest', userController.guestLogin);
+
 export default router;
