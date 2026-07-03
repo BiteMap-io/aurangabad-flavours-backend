@@ -3,11 +3,14 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
+# Disable SSL verification to work around corporate certificate issue
+RUN npm config set strict-ssl false
+
 # Copy package files
 COPY package*.json ./
 
 # Install dependencies
-RUN npm install
+RUN npm install --legacy-peer-deps
 
 # Copy source code
 COPY . .
@@ -20,21 +23,22 @@ FROM node:20-alpine
 
 WORKDIR /app
 
+# Disable SSL verification to work around corporate certificate issue
+RUN npm config set strict-ssl false
+
 # Copy package files for production dependencies
 COPY package*.json ./
 
 # Install only production dependencies
-RUN npm install --only=production
+RUN npm install --only=production --legacy-peer-deps
 
 # Copy built application from builder stage
 COPY --from=builder /app/dist ./dist
 
-# Expose the application port (assuming 4000 based on config)
+# Expose the application port
 EXPOSE 4000
 
-# Set environment variables (these can be overridden by docker-compose)
 ENV PORT=4000
 ENV NODE_ENV=production
 
-# Command to run the application
 CMD ["npm", "start"]
