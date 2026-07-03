@@ -24,6 +24,9 @@ export interface IRestaurant extends Document {
   location: { type: string; coordinates: number[] };
   address: string;
   verified: boolean;
+  ownerId?: string; // ref User (restaurant_owner) — undefined for admin-created listings
+  approvalStatus: 'pending' | 'approved' | 'rejected';
+  rejectionReason?: string;
   foodType: string; // 'veg' | 'non-veg' | 'both'
   menuItems: { name: string; category: string; price: number; isVeg: boolean }[];
   seatingCapacity: number;
@@ -63,6 +66,11 @@ const RestaurantSchema = new mongoose.Schema<IRestaurant>(
     },
     address: { type: String, default: '' },
     verified: { type: Boolean, default: false },
+    ownerId: { type: String },
+    // Admin-created listings (no ownerId set by the controller) go live immediately;
+    // owner-submitted listings start pending and need admin approval.
+    approvalStatus: { type: String, enum: ['pending', 'approved', 'rejected'], default: 'approved' },
+    rejectionReason: { type: String },
     foodType: { type: String, enum: ['veg', 'non-veg', 'both'], default: 'both' },
     menuItems: {
       type: [{

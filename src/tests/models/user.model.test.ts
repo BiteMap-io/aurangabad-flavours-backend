@@ -26,7 +26,7 @@ describe('User Model Test', () => {
     const savedUser = await user.save();
 
     expect(savedUser.password).not.toBe(password);
-    const isMatch = await bcrypt.compare(password, savedUser.password);
+    const isMatch = await bcrypt.compare(password, savedUser.password!);
     expect(isMatch).toBe(true);
   });
 

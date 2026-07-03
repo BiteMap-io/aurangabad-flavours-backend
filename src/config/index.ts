@@ -14,6 +14,8 @@ const config = {
   },
   jwtSecret: process.env.JWT_SECRET || 'your_jwt_secret_change_me',
   corsOrigin: process.env.CORS_ORIGIN ? process.env.CORS_ORIGIN.split(',') : ['*'],
+  // Public site origin — used to build the redirect target for share links (OG previews).
+  frontendUrl: process.env.FRONTEND_URL || 'http://localhost:5173',
 };
 
 export default config;
