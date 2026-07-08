@@ -35,7 +35,7 @@ router.get('/', authenticate, authorize(['admin']), mediaController.getAllMedia)
  * @swagger
  * /v1/media:
  *   post:
- *     summary: Upload media (Admin)
+ *     summary: Upload media (Admin or Restaurant Owner — e.g. dish photos)
  *     tags: [Media]
  *     security:
  *       - bearerAuth: []
@@ -55,7 +55,7 @@ router.get('/', authenticate, authorize(['admin']), mediaController.getAllMedia)
 router.post(
   '/',
   authenticate,
-  authorize(['admin']),
+  authorize(['admin', 'restaurant_owner']),
   upload.single('file'),
   mediaController.uploadMedia
 );

@@ -4,6 +4,7 @@ import config from '../config';
 import { AuthRequest } from '../middleware/auth.middleware';
 import RestaurantService from '../services/restaurant.service';
 import { decodeBase64, uploadImage } from '../utils/image';
+import User from '../models/user.model';
 import * as XLSX from 'xlsx';
 
 // Legacy restaurants created before the approval system existed have no
@@ -191,6 +192,35 @@ class RestaurantController {
       }
     } catch (error) {
       res.status(500).json({ error: 'Failed to retrieve restaurant' });
+    }
+  };
+
+  /**
+   * Admin-only: full verification view of a restaurant, including the submitting
+   * owner's contact details (name/email/phone). Never exposed on the public
+   * getRestaurantById response — owner contact info is private.
+   * @param req - Express request object
+   * @param res - Express response object
+   */
+  getRestaurantAdminView = async (req: Request, res: Response): Promise<void> => {
+    try {
+      const restaurant = await this.restaurantService.getRestaurantById(req.params.id);
+      if (!restaurant) {
+        res.status(404).json({ error: 'Restaurant not found' });
+        return;
+      }
+
+      let owner = null;
+      if (restaurant.ownerId) {
+        const ownerDoc = await User.findById(restaurant.ownerId).select('name email phone createdAt').exec();
+        if (ownerDoc) {
+          owner = { id: ownerDoc.id, name: ownerDoc.name, email: ownerDoc.email, phone: ownerDoc.phone, joinedAt: ownerDoc.createdAt };
+        }
+      }
+
+      res.status(200).json({ restaurant, owner });
+    } catch (error) {
+      res.status(500).json({ error: 'Failed to retrieve restaurant details' });
     }
   };
 
