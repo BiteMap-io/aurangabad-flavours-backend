@@ -65,6 +65,28 @@ router.get('/:id', restaurantController.getRestaurantById);
 
 /**
  * @swagger
+ * /v1/restaurants/{id}/admin-view:
+ *   get:
+ *     summary: Full verification view for admins — restaurant details plus the submitting owner's contact info (Admin)
+ *     tags: [Restaurants]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Restaurant + owner details
+ *       404:
+ *         description: Restaurant not found
+ */
+router.get('/:id/admin-view', authenticate, authorize(['admin']), restaurantController.getRestaurantAdminView);
+
+/**
+ * @swagger
  * /v1/restaurants:
  *   post:
  *     summary: Create a new restaurant
