@@ -67,10 +67,16 @@ router.get('/:id', offerController.getOfferById);
  *             properties:
  *               restaurantId:
  *                 type: string
+ *               offerType:
+ *                 type: string
+ *                 enum: [percentage, flat, custom]
  *               title:
  *                 type: string
  *               description:
  *                 type: string
+ *               highlightText:
+ *                 type: string
+ *                 description: Short badge for custom offers, e.g. "Buy 1 Get 1 Free"
  *               startDate:
  *                 type: string
  *               endDate:
@@ -81,12 +87,23 @@ router.get('/:id', offerController.getOfferById);
  *                 type: string
  *               tiers:
  *                 type: array
+ *                 description: Used when offerType is "percentage"
  *                 items:
  *                   type: object
  *                   properties:
  *                     minSpend:
  *                       type: number
  *                     discountPercent:
+ *                       type: number
+ *               flatTiers:
+ *                 type: array
+ *                 description: Used when offerType is "flat"
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     minSpend:
+ *                       type: number
+ *                     amount:
  *                       type: number
  *               audience:
  *                 type: string

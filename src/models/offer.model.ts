@@ -2,10 +2,14 @@ import mongoose, { Document, Schema } from 'mongoose';
 
 /**
  * @description Mongoose model for restaurant-owner-created Offers.
- * An offer is a discount that applies within a date/time window once a minimum
- * bill amount is reached, with optional higher discounts at higher spend tiers
- * (e.g. spend ₹1000 -> 10% off, spend ₹2000 -> 20% off), and can be scoped to
- * students only.
+ * An offer applies within a date/time window and can be scoped to students only.
+ * `offerType` picks which shape carries the actual deal:
+ *  - 'percentage': `tiers` — spend ₹1000 -> 10% off, spend ₹2000 -> 20% off, etc.
+ *  - 'flat':       `flatTiers` — spend ₹1000 -> ₹200 off, etc.
+ *  - 'custom':     free-form — BOGO, a free side, a happy-hour window, anything
+ *    that doesn't reduce to a spend/discount table. `highlightText` is the short
+ *    badge shown on cards (e.g. "Buy 1 Get 1 Free"); `title`/`description` carry
+ *    the rest.
  */
 
 export interface IOfferTier {
@@ -13,16 +17,26 @@ export interface IOfferTier {
   discountPercent: number;
 }
 
+export interface IFlatTier {
+  minSpend: number;
+  amount: number;
+}
+
+export type OfferType = 'percentage' | 'flat' | 'custom';
+
 export interface IOffer extends Document {
   id: string;
   restaurantId: string;
+  offerType: OfferType;
   title: string;
   description: string;
+  highlightText?: string;
   startDate: Date;
   endDate: Date;
   startTime?: string; // "HH:mm", optional — omitted means all-day
   endTime?: string;
   tiers: IOfferTier[];
+  flatTiers: IFlatTier[];
   audience: 'all' | 'student';
   active: boolean;
 
@@ -33,8 +47,10 @@ export interface IOffer extends Document {
 const OfferSchema = new Schema<IOffer>(
   {
     restaurantId: { type: String, required: true },
+    offerType: { type: String, enum: ['percentage', 'flat', 'custom'], default: 'percentage' },
     title: { type: String, required: true },
     description: { type: String, default: '' },
+    highlightText: { type: String },
     startDate: { type: Date, required: true },
     endDate: { type: Date, required: true },
     startTime: { type: String },
@@ -44,6 +60,15 @@ const OfferSchema = new Schema<IOffer>(
         {
           minSpend: { type: Number, required: true },
           discountPercent: { type: Number, required: true },
+        },
+      ],
+      default: [],
+    },
+    flatTiers: {
+      type: [
+        {
+          minSpend: { type: Number, required: true },
+          amount: { type: Number, required: true },
         },
       ],
       default: [],
